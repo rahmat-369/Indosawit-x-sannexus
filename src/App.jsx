@@ -18,7 +18,7 @@ export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showTopBtn, setShowTopBtn] = useState(false);
   
-  // State untuk Integrasi Sanexus
+  // State untuk Integrasi Sanexus (null = tutup, "" = buka kosong, "teks" = buka & cari)
   const [activeSanexusQuery, setActiveSanexusQuery] = useState(null);
 
   useEffect(() => {
@@ -69,8 +69,8 @@ export default function App() {
   return (
     <div className="min-h-screen font-sans text-white bg-[#050705]">
       
-      {/* OVERLAY SANEXUS (Muncul jika tombol Tanya Sanexus diklik) */}
-      {activeSanexusQuery && (
+      {/* OVERLAY SANEXUS (Perhatikan: !== null agar string kosong "" tetap ngebuka AI) */}
+      {activeSanexusQuery !== null && (
         <SanexusChat 
           initialQuery={activeSanexusQuery} 
           onClose={() => setActiveSanexusQuery(null)} 
@@ -98,6 +98,33 @@ export default function App() {
             </button>
           </div>
         </nav>
+
+        {/* Hamburger Menu Mobile (Dengan Tombol Akses AI Sanexus) */}
+        {isMenuOpen && (
+          <div className="absolute top-[110%] left-0 w-full glass-card rounded-3xl p-6 animate-in slide-in-from-top duration-300 border border-white/5 bg-white/[0.02] backdrop-blur-xl shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-[10px] text-blue-400 font-bold uppercase tracking-widest">Status Sistem</h3>
+              <span className="flex items-center gap-1 text-[9px] font-bold text-green-400 bg-green-400/10 px-2 py-1 rounded-full"><CheckCircle2 size={10}/> Link Aktif</span>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              {/* TOMBOL SPESIAL MENUJU SANEXUS (FULL WIDTH) */}
+              <button 
+                onClick={() => { setIsMenuOpen(false); setActiveSanexusQuery(""); }} 
+                className="col-span-2 p-4 bg-gradient-to-r from-[#0d1110] to-[#1a201d] border border-[#b8cbb8]/30 rounded-2xl text-xs font-bold text-[#b8cbb8] flex items-center justify-center gap-2 shadow-[0_4px_15px_rgba(184,203,184,0.1)] hover:border-[#b8cbb8] transition-all"
+              >
+                <Sparkles size={16} /> Akses Cepat Sanexus AI
+              </button>
+
+              <button onClick={() => { setIsMenuOpen(false); window.scrollTo({top: 0, behavior: 'smooth'}); }} className="p-3 bg-white/5 rounded-2xl text-[11px] font-bold border border-white/5 text-center text-gray-300 hover:bg-white/10 transition-colors">
+                Berita Terbaru
+              </button>
+              <button onClick={() => { setIsMenuOpen(false); window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'}); }} className="p-3 bg-white/5 rounded-2xl text-[11px] font-bold border border-white/5 text-center text-gray-300 hover:bg-white/10 transition-colors">
+                Kontak Developer
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Filter Bar */}
@@ -138,7 +165,7 @@ export default function App() {
                   BACA FULL <ExternalLink size={10}/>
                 </a>
                 
-                {/* JEMBATAN KE SANEXUS */}
+                {/* JEMBATAN KE SANEXUS VIA BERITA */}
                 <button 
                   onClick={() => setActiveSanexusQuery(item.title)} 
                   className="text-[10px] px-4 py-2 rounded-full border border-[#b8cbb8]/30 bg-[#b8cbb8]/10 text-[#b8cbb8] hover:bg-[#b8cbb8]/20 transition-all font-bold flex items-center gap-1">
@@ -160,7 +187,7 @@ export default function App() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full mb-12">
             {/* Profil R_hmt */}
-            <div className="flex flex-col items-center bg-white/[0.02] border border-white/5 p-6 rounded-3xl">
+            <div className="flex flex-col items-center bg-white/[0.02] border border-white/5 p-6 rounded-3xl hover:border-blue-500/30 transition-colors">
               <img src="https://res.cloudinary.com/dwiozm4vz/image/upload/v1772959730/ootglrvfmykn6xsto7rq.png" alt="R_hmt" className="w-20 h-20 rounded-full border-2 border-blue-500/30 object-cover mb-4" />
               <h3 className="text-lg font-black text-white">R_hmt ofc</h3>
               <p className="text-blue-400 font-mono text-[9px] font-bold uppercase tracking-[0.2em] mb-4">Lead Frontend & AI Prompting</p>
@@ -176,7 +203,7 @@ export default function App() {
             </div>
 
             {/* Profil San */}
-            <div className="flex flex-col items-center bg-white/[0.02] border border-white/5 p-6 rounded-3xl">
+            <div className="flex flex-col items-center bg-white/[0.02] border border-white/5 p-6 rounded-3xl hover:border-[#b8cbb8]/30 transition-colors">
               <img src="https://e.top4top.io/p_3721610g20.jpg" alt="San" className="w-20 h-20 rounded-full border-2 border-[#b8cbb8]/30 object-cover mb-4" />
               <h3 className="text-lg font-black text-white">SANN404</h3>
               <p className="text-[#b8cbb8] font-mono text-[9px] font-bold uppercase tracking-[0.2em] mb-4">Node.js Expert & AI Engine</p>
@@ -204,4 +231,4 @@ export default function App() {
       )}
     </div>
   );
-            } 
+}
