@@ -1,7 +1,7 @@
 // api/index.js
 import axios from 'axios';
 
-// Fungsi utama dari request kamu
+// Fungsi utama dari request kamu (Tetap pakai algoritma asli Bang San)
 async function turboseekLogic(question) {
     try {
         if (!question) throw new Error('Question is required.');
@@ -47,12 +47,15 @@ async function turboseekLogic(question) {
     }
 }
 
-// Vercel Serverless Handler
-export default async (req, res) => {
-    // Handle CORS
+// Vercel Serverless Handler (Versi ES Modules - Anti Error)
+export default async function handler(req, res) {
+    // Handle CORS biar bisa diakses dari frontend mana aja
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
     
+    // Tangkap request pre-flight dari browser
     if (req.method === 'OPTIONS') {
         res.status(200).end();
         return;
@@ -68,6 +71,7 @@ export default async (req, res) => {
         const result = await turboseekLogic(question);
         return res.status(200).json(result);
     } catch (error) {
+        console.error("Backend Error:", error);
         return res.status(500).json({ error: error.message });
     }
-}; 
+            } 
