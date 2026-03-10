@@ -1,5 +1,5 @@
 // api/index.js
-const axios = require('axios');
+import axios from 'axios';
 
 // Fungsi utama dari request kamu
 async function turboseekLogic(question) {
@@ -48,7 +48,7 @@ async function turboseekLogic(question) {
 }
 
 // Vercel Serverless Handler
-module.exports = async (req, res) => {
+export default async (req, res) => {
     // Handle CORS
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -70,4 +70,4 @@ module.exports = async (req, res) => {
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }
-};
+}; 
