@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Menu, X, Filter, ExternalLink, Github, Send, Instagram, CheckCircle2, ChevronUp, MessageCircle, Sparkles } from "lucide-react";
 import SanexusChat from "./components/SanexusChat";
 
@@ -18,7 +18,7 @@ export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showTopBtn, setShowTopBtn] = useState(false);
   
-  // State untuk Integrasi Sanexus (null = tutup, "" = buka kosong, "teks" = buka & cari)
+  // State untuk Integrasi Sanexus (Sekarang bisa menerima Object Berita)
   const [activeSanexusQuery, setActiveSanexusQuery] = useState(null);
 
   useEffect(() => {
@@ -69,7 +69,7 @@ export default function App() {
   return (
     <div className="min-h-screen font-sans text-white bg-[#050705]">
       
-      {/* OVERLAY SANEXUS (Perhatikan: !== null agar string kosong "" tetap ngebuka AI) */}
+      {/* OVERLAY SANEXUS AI */}
       {activeSanexusQuery !== null && (
         <SanexusChat 
           initialQuery={activeSanexusQuery} 
@@ -99,7 +99,7 @@ export default function App() {
           </div>
         </nav>
 
-        {/* Hamburger Menu Mobile (Dengan Tombol Akses AI Sanexus) */}
+        {/* Hamburger Menu Mobile */}
         {isMenuOpen && (
           <div className="absolute top-[110%] left-0 w-full glass-card rounded-3xl p-6 animate-in slide-in-from-top duration-300 border border-white/5 bg-white/[0.02] backdrop-blur-xl shadow-2xl">
             <div className="flex justify-between items-center mb-4">
@@ -108,7 +108,6 @@ export default function App() {
             </div>
             
             <div className="grid grid-cols-2 gap-3 mb-3">
-              {/* TOMBOL SPESIAL MENUJU SANEXUS (FULL WIDTH) */}
               <button 
                 onClick={() => { setIsMenuOpen(false); setActiveSanexusQuery(""); }} 
                 className="col-span-2 p-4 bg-gradient-to-r from-[#0d1110] to-[#1a201d] border border-[#b8cbb8]/30 rounded-2xl text-xs font-bold text-[#b8cbb8] flex items-center justify-center gap-2 shadow-[0_4px_15px_rgba(184,203,184,0.1)] hover:border-[#b8cbb8] transition-all"
@@ -165,9 +164,14 @@ export default function App() {
                   BACA FULL <ExternalLink size={10}/>
                 </a>
                 
-                {/* JEMBATAN KE SANEXUS VIA BERITA */}
+                {/* TOMBOL AI (Sekarang ngirim Object Paket Lengkap) */}
                 <button 
-                  onClick={() => setActiveSanexusQuery(item.title)} 
+                  onClick={() => setActiveSanexusQuery({
+                    type: 'news',
+                    title: item.title,
+                    link: item.link,
+                    image: item.image
+                  })} 
                   className="text-[10px] px-4 py-2 rounded-full border border-[#b8cbb8]/30 bg-[#b8cbb8]/10 text-[#b8cbb8] hover:bg-[#b8cbb8]/20 transition-all font-bold flex items-center gap-1">
                   <Sparkles size={12} /> Tanya Sanexus
                 </button>
@@ -177,7 +181,7 @@ export default function App() {
         ))}
       </div>
 
-      {/* FOOTER KOLABORASI DUAL BRANDING */}
+      {/* FOOTER */}
       <footer className="mt-20 border-t border-white/5 bg-white/[0.01] backdrop-blur-sm p-10 md:p-16">
         <div className="max-w-4xl mx-auto flex flex-col items-center text-center">
           <h2 className="text-xl md:text-2xl font-black tracking-tighter text-white mb-2">INDOSAWIT NEXUS</h2>
@@ -186,7 +190,6 @@ export default function App() {
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full mb-12">
-            {/* Profil R_hmt */}
             <div className="flex flex-col items-center bg-white/[0.02] border border-white/5 p-6 rounded-3xl hover:border-blue-500/30 transition-colors">
               <img src="https://res.cloudinary.com/dwiozm4vz/image/upload/v1772959730/ootglrvfmykn6xsto7rq.png" alt="R_hmt" className="w-20 h-20 rounded-full border-2 border-blue-500/30 object-cover mb-4" />
               <h3 className="text-lg font-black text-white">R_hmt ofc</h3>
@@ -202,7 +205,6 @@ export default function App() {
               </a>
             </div>
 
-            {/* Profil San */}
             <div className="flex flex-col items-center bg-white/[0.02] border border-white/5 p-6 rounded-3xl hover:border-[#b8cbb8]/30 transition-colors">
               <img src="https://e.top4top.io/p_3721610g20.jpg" alt="San" className="w-20 h-20 rounded-full border-2 border-[#b8cbb8]/30 object-cover mb-4" />
               <h3 className="text-lg font-black text-white">SANN404</h3>
@@ -231,4 +233,4 @@ export default function App() {
       )}
     </div>
   );
-}
+      }
