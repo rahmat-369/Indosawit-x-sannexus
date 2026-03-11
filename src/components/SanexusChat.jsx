@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Instagram, Send, PlayCircle, MessageCircle } from 'lucide-react';
+import { Instagram, Send, PlayCircle, MessageCircle, PlusCircle, Trash2 } from 'lucide-react';
 
 const TikTokIcon = ({ size = 20, className = "" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
@@ -11,11 +11,15 @@ const WhatsAppIcon = ({ size = 20, className = "" }) => (
 export default function SanexusChat({ initialQuery, onClose }) {
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [history, setHistory] = useState([]);
+  
+  // STATE BARU: Manajemen Sesi (Session Memory)
+  const [sessions, setSessions] = useState([]);
+  const [currentSessionId, setCurrentSessionId] = useState(Date.now().toString());
+  
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showFullProfile, setShowFullProfile] = useState(false);
-  
   const [messages, setMessages] = useState([]);
+  
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -26,11 +30,12 @@ export default function SanexusChat({ initialQuery, onClose }) {
     scrollToBottom();
   }, [messages, isLoading]);
 
+  // LOAD SESI DARI LOCAL STORAGE
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem('turboHistory')) || [];
-    setHistory(saved);
+    const savedSessions = JSON.parse(localStorage.getItem('sanexus_sessions')) || [];
+    setSessions(savedSessions);
     
-    // Logika Pemisah: Cek apakah yg dikirim String biasa atau Object Berita
+    // Cek Initial Query (Dari tombol Tanya Sanexus di halaman depan)
     if (initialQuery && messages.length === 0) {
       if (typeof initialQuery === 'object' && initialQuery.type === 'news') {
         handleNewsQuery(initialQuery);
@@ -40,39 +45,77 @@ export default function SanexusChat({ initialQuery, onClose }) {
     }
   }, [initialQuery]);
 
-  const addToHistory = (q) => {
-    let newHistory = history.filter(item => item !== q);
-    newHistory.unshift(q);
-    if (newHistory.length > 15) newHistory.pop();
-    setHistory(newHistory);
-    localStorage.setItem('turboHistory', JSON.stringify(newHistory));
+  // SIMPAN SESI SECARA OTOMATIS SETIAP ADA PERUBAHAN PESAN
+  useEffect(() => {
+    if (messages.length > 0) {
+      setSessions(prevSessions => {
+        const existingSessionIndex = prevSessions.findIndex(s => s.id === currentSessionId);
+        
+        // Bikin judul sesi otomatis dari pesan pertama user
+        let title = "Obrolan Baru";
+        const firstUserMsg = messages.find(m => m.role === 'user');
+        if (firstUserMsg) {
+           title = firstUserMsg.isNewsCard ? firstUserMsg.newsData.title : firstUserMsg.content;
+           if (title.length > 30) title = title.substring(0, 30) + '...'; // Truncate judul
+        }
+
+        const updatedSession = { id: currentSessionId, title, messages };
+        let newSessions;
+        
+        if (existingSessionIndex >= 0) {
+          newSessions = [...prevSessions];
+          newSessions[existingSessionIndex] = updatedSession;
+        } else {
+          newSessions = [updatedSession, ...prevSessions]; // Taruh di paling atas
+        }
+        
+        localStorage.setItem('sanexus_sessions', JSON.stringify(newSessions));
+        return newSessions;
+      });
+    }
+  }, [messages, currentSessionId]);
+
+  // FUNGSI BUAT OBROLAN BARU
+  const createNewSession = () => {
+    setMessages([]);
+    setCurrentSessionId(Date.now().toString());
+    setIsSidebarOpen(false);
   };
 
-  const clearHistory = () => {
-    setHistory([]);
-    localStorage.removeItem('turboHistory');
+  // FUNGSI LOAD OBROLAN LAMA (KLIK HISTORI)
+  const loadSession = (id) => {
+    const sessionToLoad = sessions.find(s => s.id === id);
+    if (sessionToLoad) {
+      setMessages(sessionToLoad.messages);
+      setCurrentSessionId(sessionToLoad.id);
+    }
+    setIsSidebarOpen(false);
   };
 
-  // FUNGSI KHUSUS UNTUK MEMBACA BERITA (SECRET PROMPTING)
+  // FUNGSI HAPUS SEMUA HISTORI
+  const clearAllHistory = () => {
+    setSessions([]);
+    setMessages([]);
+    setCurrentSessionId(Date.now().toString());
+    localStorage.removeItem('sanexus_sessions');
+  };
+
+  // FUNGSI BACA BERITA (SECRET PROMPT)
   const handleNewsQuery = async (newsObj) => {
-    // 1. Tampilkan visual UI Kartu Berita di layar chat
-    setMessages([{
+    const newMsg = {
         role: 'user',
         isNewsCard: true,
         newsData: newsObj,
         content: `Tolong analisis berita ini: ${newsObj.title}`
-    }]);
-
+    };
+    setMessages(prev => [...prev, newMsg]);
     setIsLoading(true);
-    addToHistory(newsObj.title); // Simpan judulnya ke history
 
-    // 2. Secret Prompt Injection (Dikirim ke Backend tanpa diketahui user)
     const secretPrompt = `Tolong baca dan analisis berita dengan judul '${newsObj.title}'. Referensi link: ${newsObj.link}. Berikan ringkasan detail dari isi berita tersebut agar kita bisa mendiskusikannya lebih lanjut.`;
 
     try {
       const response = await fetch(`/api?question=${encodeURIComponent(secretPrompt)}`);
       const data = await response.json();
-      
       if (response.ok) {
         setMessages(prev => [...prev, { role: 'ai', content: data.answer, sources: data.sources, similar: data.similarQuestions }]);
       } else {
@@ -85,21 +128,21 @@ export default function SanexusChat({ initialQuery, onClose }) {
     }
   };
 
-  // FUNGSI SEARCH BIASA (OBROLAN)
+  // FUNGSI SEARCH BIASA & MELANJUTKAN OBROLAN
   const performSearch = async (question) => {
     if (!question.trim()) return;
     
     setMessages(prev => [...prev, { role: 'user', content: question }]);
     setIsLoading(true);
     setInputValue('');
-    addToHistory(question);
     setIsSidebarOpen(false);
 
+    // LOGIKA ANTI-AMNESIA: Ngambil konteks dari obrolan sebelumnya di sesi ini
     let queryToSend = question;
     if (messages.length > 0) {
       const lastTopic = messages.filter(m => m.role === 'user').pop()?.content;
       if (lastTopic) {
-        queryToSend = `Berdasarkan obrolan sebelumnya tentang "${lastTopic}", tolong jawab: ${question}`;
+        queryToSend = `Berdasarkan obrolan sebelumnya tentang "${lastTopic}", tolong jawab pertanyaan lanjutan ini: ${question}`;
       }
     }
 
@@ -147,13 +190,20 @@ export default function SanexusChat({ initialQuery, onClose }) {
         .s-title { font-family: var(--font-serif); font-size: 1.2rem; color: var(--text-highlight); }
         .s-btn { background: none; border: none; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 5px; }
         
+        /* SIDEBAR STYLES */
         .s-sidebar { position: fixed; top: 0; left: -100%; width: 100%; height: 100%; z-index: 200; background: rgba(0,0,0,0.5); transition: 0.3s; }
         .s-sidebar.visible { left: 0; }
         .s-sidebar-content { width: 80%; max-width: 320px; height: 100%; background: #151a18; padding: 25px 20px; display: flex; flex-direction: column; box-shadow: 5px 0 20px rgba(0,0,0,0.5); }
+        
+        .s-new-chat-btn { display: flex; align-items: center; gap: 10px; padding: 12px 15px; background: rgba(184, 203, 184, 0.1); border: 1px solid rgba(184, 203, 184, 0.3); color: var(--text-highlight); border-radius: 12px; cursor: pointer; font-weight: 600; margin-bottom: 20px; transition: 0.2s; }
+        .s-new-chat-btn:hover { background: rgba(184, 203, 184, 0.2); }
+
         .s-history-list { flex: 1; overflow-y: auto; list-style: none; padding:0; margin:0; }
-        .s-history-item { padding: 12px; color: var(--text-muted); border-bottom: 1px solid var(--border-glass); cursor: pointer; font-size:0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .s-history-item:hover { background: rgba(255,255,255,0.05); }
-        .s-clear-btn { background: rgba(255,0,0,0.1); color: #ff6b6b; border: 1px solid rgba(255,0,0,0.2); padding: 10px; border-radius: 8px; cursor: pointer; display:flex; align-items:center; justify-content:center; gap:5px; margin-top:10px; margin-bottom: 20px; }
+        .s-history-item { padding: 12px; color: var(--text-muted); border-bottom: 1px solid var(--border-glass); cursor: pointer; font-size:0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 8px; }
+        .s-history-item:hover, .s-history-item.active { background: rgba(255,255,255,0.05); color: #fff; }
+        
+        .s-clear-btn { background: rgba(255,0,0,0.05); color: #ff6b6b; border: 1px solid rgba(255,0,0,0.2); padding: 10px; border-radius: 8px; cursor: pointer; display:flex; align-items:center; justify-content:center; gap:5px; margin-top:10px; margin-bottom: 20px; font-size: 0.85rem; transition: 0.2s;}
+        .s-clear-btn:hover { background: rgba(255,0,0,0.1); }
         
         .s-mini-profile { display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(184, 203, 184, 0.05); border: 1px solid rgba(184, 203, 184, 0.2); border-radius: 12px; cursor: pointer; transition: 0.2s; margin-top: auto; }
         .s-mini-profile:hover { background: rgba(184, 203, 184, 0.1); }
@@ -161,7 +211,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
         .s-mini-profile-info h4 { font-size: 0.9rem; color: #fff; margin: 0; }
         .s-mini-profile-info p { font-size: 0.7rem; color: var(--text-muted); margin: 0; }
 
-        /* FULL PAGE PROFILE OVERLAY - SCROLLABLE & RESTRUCTURED */
+        /* FULL PAGE PROFILE OVERLAY */
         .s-full-profile-overlay { position: fixed; inset: 0; background: var(--bg-dark); z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 60px 20px 40px 20px; text-align: center; overflow-y: auto; animation: profileFade 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
         @keyframes profileFade { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         .s-close-full-profile { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.1); border: none; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 310; }
@@ -191,34 +241,43 @@ export default function SanexusChat({ initialQuery, onClose }) {
         @keyframes s-pulse-ring { 0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(184, 203, 184, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(184, 203, 184, 0); } 100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(184, 203, 184, 0); } }
       `}} />
 
-      {/* HEADER */}
       <header className="s-header">
         <button className="s-btn" onClick={() => setIsSidebarOpen(true)}><MaterialIcon name="grid_view" /></button>
         <span className="s-title">SanexusAI</span>
         <button className="s-btn" onClick={onClose} style={{color: '#ff6b6b'}}><MaterialIcon name="close" /></button>
       </header>
 
-      {/* SIDEBAR */}
       <aside className={`s-sidebar ${isSidebarOpen ? 'visible' : ''}`} onClick={(e) => {if(e.target === e.currentTarget) setIsSidebarOpen(false)}}>
         <div className="s-sidebar-content">
           <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '20px'}}>
-            <h2 style={{fontSize: '1.2rem'}}>Menu</h2>
+            <h2 style={{fontSize: '1.2rem'}}>Riwayat Obrolan</h2>
             <button className="s-btn" onClick={() => setIsSidebarOpen(false)}><MaterialIcon name="close" /></button>
           </div>
 
-          <h3 style={{fontSize: '0.9rem', color: '#8e9b95', marginBottom: '10px'}}>Search History</h3>
+          {/* TOMBOL NEW CHAT */}
+          <button className="s-new-chat-btn" onClick={createNewSession}>
+            <PlusCircle size={18} /> Obrolan Baru
+          </button>
+
+          <h3 style={{fontSize: '0.8rem', color: '#8e9b95', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px'}}>Sesi Tersimpan</h3>
           <ul className="s-history-list">
-            {history.length === 0 ? <li style={{border: 'none', opacity: 0.5}} className="s-history-item">No history yet.</li> : null}
-            {history.map((q, i) => (
-              <li key={i} className="s-history-item" onClick={() => {
-                setMessages([]);
-                performSearch(q);
-              }} title={q}>{q}</li>
+            {sessions.length === 0 ? <li style={{border: 'none', opacity: 0.5}} className="s-history-item">Belum ada obrolan.</li> : null}
+            {sessions.map((session) => (
+              <li 
+                key={session.id} 
+                className={`s-history-item ${currentSessionId === session.id ? 'active' : ''}`} 
+                onClick={() => loadSession(session.id)}
+                title={session.title}
+              >
+                <MessageCircle size={14} style={{opacity: 0.7}} />
+                {session.title}
+              </li>
             ))}
           </ul>
-          {history.length > 0 && (
-             <button className="s-clear-btn" onClick={clearHistory}>
-               <MaterialIcon name="delete" /> Clear History
+          
+          {sessions.length > 0 && (
+             <button className="s-clear-btn" onClick={clearAllHistory}>
+               <Trash2 size={16} /> Hapus Semua Riwayat
              </button>
           )}
 
@@ -232,28 +291,23 @@ export default function SanexusChat({ initialQuery, onClose }) {
         </div>
       </aside>
 
-      {/* FULL PAGE PROFILE OVERLAY - URUTAN BARU */}
+      {/* FULL PAGE PROFILE OVERLAY */}
       {showFullProfile && (
         <div className="s-full-profile-overlay">
           <button className="s-close-full-profile" onClick={() => setShowFullProfile(false)}>
             <MaterialIcon name="close" />
           </button>
           
-          {/* 1. Badge Kolaborasi */}
           <div className="s-collab-badge">
             Official Collaboration: IndoSawit.news x SanexusAI - Menciptakan ekosistem informasi cerdas.
           </div>
 
-          {/* 2. Foto Profil */}
           <img src="https://e.top4top.io/p_3721610g20.jpg" alt="SANN404" style={{width: '120px', height: '120px', borderRadius: '50%', border: '3px solid #b8cbb8', objectFit: 'cover', marginBottom: '20px', boxShadow: '0 0 30px rgba(184,203,184,0.2)', flexShrink: 0}} />
           
-          {/* 3. Nama Web */}
           <h1 style={{fontFamily: "'Playfair Display', serif", fontSize: '2.5rem', color: '#b8cbb8', marginBottom: '5px'}}>SANEXUSAI</h1>
           
-          {/* 4. Nama Developer */}
           <h3 style={{fontSize: '1.5rem', color: '#ffffff', marginBottom: '20px', letterSpacing: '2px'}}>SANN404</h3>
           
-          {/* 5. Deskripsi & Tombol */}
           <p style={{fontSize: '0.9rem', color: '#8e9b95', marginBottom: '30px', maxWidth: '300px', lineHeight: '1.6'}}>Node.js Expert & AI Engine Developer. Berfokus pada pengembangan sistem arsitektur backend yang kuat.</p>
           
           <div style={{display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '30px', flexShrink: 0}}>
@@ -284,7 +338,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
           <div key={index}>
             {msg.role === 'user' ? (
               <div className="s-bubble-user animate-in fade-in slide-in-from-bottom-2">
-                {/* JIKA BERUPA KARTU BERITA */}
                 {msg.isNewsCard && (
                   <div style={{background: 'rgba(0,0,0,0.3)', padding: '10px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '10px', textAlign: 'left'}}>
                     <img src={msg.newsData.image} alt="news" style={{width: '100%', height: '120px', objectFit: 'cover', borderRadius: '8px', marginBottom: '10px'}} />
@@ -292,7 +345,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
                     <a href={msg.newsData.link} target="_blank" rel="noreferrer" style={{fontSize: '0.75rem', color: '#60a5fa', textDecoration: 'none'}}>Baca Sumber Artikel ↗</a>
                   </div>
                 )}
-                {/* TEKS PERTANYAAN */}
                 {msg.content}
               </div>
             ) : (
@@ -362,4 +414,4 @@ export default function SanexusChat({ initialQuery, onClose }) {
       </div>
     </div>
   );
-      }
+  }
