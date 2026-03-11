@@ -12,7 +12,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   
-  // STATE BARU: Manajemen Sesi (Session Memory)
   const [sessions, setSessions] = useState([]);
   const [currentSessionId, setCurrentSessionId] = useState(Date.now().toString());
   
@@ -21,6 +20,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
   const [messages, setMessages] = useState([]);
   
   const messagesEndRef = useRef(null);
+  const hasInitialized = useRef(false); // Kunci gembok biar initial query gak jalan 2x
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -30,33 +30,35 @@ export default function SanexusChat({ initialQuery, onClose }) {
     scrollToBottom();
   }, [messages, isLoading]);
 
-  // LOAD SESI DARI LOCAL STORAGE
+  // LOAD SESI & INITIAL QUERY SECARA AMAN (CUMA JALAN 1X)
   useEffect(() => {
-    const savedSessions = JSON.parse(localStorage.getItem('sanexus_sessions')) || [];
-    setSessions(savedSessions);
-    
-    // Cek Initial Query (Dari tombol Tanya Sanexus di halaman depan)
-    if (initialQuery && messages.length === 0) {
-      if (typeof initialQuery === 'object' && initialQuery.type === 'news') {
-        handleNewsQuery(initialQuery);
-      } else if (typeof initialQuery === 'string' && initialQuery.trim() !== "") {
-        performSearch(initialQuery);
+    if (!hasInitialized.current) {
+      hasInitialized.current = true;
+      
+      const savedSessions = JSON.parse(localStorage.getItem('sanexus_sessions')) || [];
+      setSessions(savedSessions);
+      
+      if (initialQuery) {
+        if (typeof initialQuery === 'object' && initialQuery.type === 'news') {
+          handleNewsQuery(initialQuery);
+        } else if (typeof initialQuery === 'string' && initialQuery.trim() !== "") {
+          performSearch(initialQuery);
+        }
       }
     }
-  }, [initialQuery]);
+  }, []); // Kosongin dependency-nya biar gak trigger ulang
 
-  // SIMPAN SESI SECARA OTOMATIS SETIAP ADA PERUBAHAN PESAN
+  // SIMPAN SESI SECARA OTOMATIS
   useEffect(() => {
     if (messages.length > 0) {
       setSessions(prevSessions => {
         const existingSessionIndex = prevSessions.findIndex(s => s.id === currentSessionId);
         
-        // Bikin judul sesi otomatis dari pesan pertama user
         let title = "Obrolan Baru";
         const firstUserMsg = messages.find(m => m.role === 'user');
         if (firstUserMsg) {
            title = firstUserMsg.isNewsCard ? firstUserMsg.newsData.title : firstUserMsg.content;
-           if (title.length > 30) title = title.substring(0, 30) + '...'; // Truncate judul
+           if (title.length > 30) title = title.substring(0, 30) + '...';
         }
 
         const updatedSession = { id: currentSessionId, title, messages };
@@ -66,7 +68,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
           newSessions = [...prevSessions];
           newSessions[existingSessionIndex] = updatedSession;
         } else {
-          newSessions = [updatedSession, ...prevSessions]; // Taruh di paling atas
+          newSessions = [updatedSession, ...prevSessions];
         }
         
         localStorage.setItem('sanexus_sessions', JSON.stringify(newSessions));
@@ -82,17 +84,16 @@ export default function SanexusChat({ initialQuery, onClose }) {
     setIsSidebarOpen(false);
   };
 
-  // FUNGSI LOAD OBROLAN LAMA (KLIK HISTORI)
+  // FUNGSI LOAD OBROLAN LAMA (ANTI RESTART)
   const loadSession = (id) => {
     const sessionToLoad = sessions.find(s => s.id === id);
     if (sessionToLoad) {
-      setMessages(sessionToLoad.messages);
-      setCurrentSessionId(sessionToLoad.id);
+      setMessages(sessionToLoad.messages); // Restore pesan lamanya
+      setCurrentSessionId(sessionToLoad.id); // Pindah ID
     }
     setIsSidebarOpen(false);
   };
 
-  // FUNGSI HAPUS SEMUA HISTORI
   const clearAllHistory = () => {
     setSessions([]);
     setMessages([]);
@@ -100,7 +101,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
     localStorage.removeItem('sanexus_sessions');
   };
 
-  // FUNGSI BACA BERITA (SECRET PROMPT)
   const handleNewsQuery = async (newsObj) => {
     const newMsg = {
         role: 'user',
@@ -128,7 +128,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
     }
   };
 
-  // FUNGSI SEARCH BIASA & MELANJUTKAN OBROLAN
   const performSearch = async (question) => {
     if (!question.trim()) return;
     
@@ -137,7 +136,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
     setInputValue('');
     setIsSidebarOpen(false);
 
-    // LOGIKA ANTI-AMNESIA: Ngambil konteks dari obrolan sebelumnya di sesi ini
     let queryToSend = question;
     if (messages.length > 0) {
       const lastTopic = messages.filter(m => m.role === 'user').pop()?.content;
@@ -190,7 +188,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
         .s-title { font-family: var(--font-serif); font-size: 1.2rem; color: var(--text-highlight); }
         .s-btn { background: none; border: none; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 5px; }
         
-        /* SIDEBAR STYLES */
         .s-sidebar { position: fixed; top: 0; left: -100%; width: 100%; height: 100%; z-index: 200; background: rgba(0,0,0,0.5); transition: 0.3s; }
         .s-sidebar.visible { left: 0; }
         .s-sidebar-content { width: 80%; max-width: 320px; height: 100%; background: #151a18; padding: 25px 20px; display: flex; flex-direction: column; box-shadow: 5px 0 20px rgba(0,0,0,0.5); }
@@ -211,7 +208,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
         .s-mini-profile-info h4 { font-size: 0.9rem; color: #fff; margin: 0; }
         .s-mini-profile-info p { font-size: 0.7rem; color: var(--text-muted); margin: 0; }
 
-        /* FULL PAGE PROFILE OVERLAY */
         .s-full-profile-overlay { position: fixed; inset: 0; background: var(--bg-dark); z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 60px 20px 40px 20px; text-align: center; overflow-y: auto; animation: profileFade 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
         @keyframes profileFade { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         .s-close-full-profile { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.1); border: none; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 310; }
@@ -254,7 +250,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
             <button className="s-btn" onClick={() => setIsSidebarOpen(false)}><MaterialIcon name="close" /></button>
           </div>
 
-          {/* TOMBOL NEW CHAT */}
           <button className="s-new-chat-btn" onClick={createNewSession}>
             <PlusCircle size={18} /> Obrolan Baru
           </button>
@@ -291,7 +286,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
         </div>
       </aside>
 
-      {/* FULL PAGE PROFILE OVERLAY */}
       {showFullProfile && (
         <div className="s-full-profile-overlay">
           <button className="s-close-full-profile" onClick={() => setShowFullProfile(false)}>
@@ -305,9 +299,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
           <img src="https://e.top4top.io/p_3721610g20.jpg" alt="SANN404" style={{width: '120px', height: '120px', borderRadius: '50%', border: '3px solid #b8cbb8', objectFit: 'cover', marginBottom: '20px', boxShadow: '0 0 30px rgba(184,203,184,0.2)', flexShrink: 0}} />
           
           <h1 style={{fontFamily: "'Playfair Display', serif", fontSize: '2.5rem', color: '#b8cbb8', marginBottom: '5px'}}>SANEXUSAI</h1>
-          
           <h3 style={{fontSize: '1.5rem', color: '#ffffff', marginBottom: '20px', letterSpacing: '2px'}}>SANN404</h3>
-          
           <p style={{fontSize: '0.9rem', color: '#8e9b95', marginBottom: '30px', maxWidth: '300px', lineHeight: '1.6'}}>Node.js Expert & AI Engine Developer. Berfokus pada pengembangan sistem arsitektur backend yang kuat.</p>
           
           <div style={{display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '30px', flexShrink: 0}}>
@@ -322,7 +314,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
         </div>
       )}
 
-      {/* MAIN CHAT AREA */}
       <main className="s-chat-area">
         {messages.length === 0 && (
           <div style={{marginTop: '20px'}}>
@@ -414,4 +405,4 @@ export default function SanexusChat({ initialQuery, onClose }) {
       </div>
     </div>
   );
-  }
+    }
