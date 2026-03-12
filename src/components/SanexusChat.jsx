@@ -12,15 +12,17 @@ export default function SanexusChat({ initialQuery, onClose }) {
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   
+  // STATE BARU: DRAFT PREVIEW
+  const [pendingNews, setPendingNews] = useState(null);
+
   const [sessions, setSessions] = useState([]);
   const [currentSessionId, setCurrentSessionId] = useState(Date.now().toString());
-  
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showFullProfile, setShowFullProfile] = useState(false);
   const [messages, setMessages] = useState([]);
   
   const messagesEndRef = useRef(null);
-  const hasInitialized = useRef(false); // Kunci gembok biar initial query gak jalan 2x
+  const hasInitialized = useRef(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -28,70 +30,66 @@ export default function SanexusChat({ initialQuery, onClose }) {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isLoading]);
+  }, [messages, isLoading, pendingNews]);
 
-  // LOAD SESI & INITIAL QUERY SECARA AMAN (CUMA JALAN 1X)
+  // LOAD SESI & TANGKAP QUERY BERITA
   useEffect(() => {
     if (!hasInitialized.current) {
       hasInitialized.current = true;
-      
       const savedSessions = JSON.parse(localStorage.getItem('sanexus_sessions')) || [];
       setSessions(savedSessions);
       
       if (initialQuery) {
         if (typeof initialQuery === 'object' && initialQuery.type === 'news') {
-          handleNewsQuery(initialQuery);
+          // BUKAN DIKIRIM, TAPI DIMASUKIN KE DRAFT PREVIEW
+          setPendingNews(initialQuery);
         } else if (typeof initialQuery === 'string' && initialQuery.trim() !== "") {
           performSearch(initialQuery);
         }
       }
     }
-  }, []); // Kosongin dependency-nya biar gak trigger ulang
+  }, []);
 
-  // SIMPAN SESI SECARA OTOMATIS
+  // SIMPAN SESI OTOMATIS
   useEffect(() => {
     if (messages.length > 0) {
       setSessions(prevSessions => {
         const existingSessionIndex = prevSessions.findIndex(s => s.id === currentSessionId);
-        
         let title = "Obrolan Baru";
         const firstUserMsg = messages.find(m => m.role === 'user');
         if (firstUserMsg) {
            title = firstUserMsg.isNewsCard ? firstUserMsg.newsData.title : firstUserMsg.content;
            if (title.length > 30) title = title.substring(0, 30) + '...';
         }
-
         const updatedSession = { id: currentSessionId, title, messages };
         let newSessions;
-        
         if (existingSessionIndex >= 0) {
           newSessions = [...prevSessions];
           newSessions[existingSessionIndex] = updatedSession;
         } else {
           newSessions = [updatedSession, ...prevSessions];
         }
-        
         localStorage.setItem('sanexus_sessions', JSON.stringify(newSessions));
         return newSessions;
       });
     }
   }, [messages, currentSessionId]);
 
-  // FUNGSI BUAT OBROLAN BARU
   const createNewSession = () => {
     setMessages([]);
     setCurrentSessionId(Date.now().toString());
     setIsSidebarOpen(false);
+    setPendingNews(null); // Bersihin draft kalau ada
   };
 
-  // FUNGSI LOAD OBROLAN LAMA (ANTI RESTART)
   const loadSession = (id) => {
     const sessionToLoad = sessions.find(s => s.id === id);
     if (sessionToLoad) {
-      setMessages(sessionToLoad.messages); // Restore pesan lamanya
-      setCurrentSessionId(sessionToLoad.id); // Pindah ID
+      setMessages(sessionToLoad.messages);
+      setCurrentSessionId(sessionToLoad.id);
     }
     setIsSidebarOpen(false);
+    setPendingNews(null); // Bersihin draft
   };
 
   const clearAllHistory = () => {
@@ -101,68 +99,76 @@ export default function SanexusChat({ initialQuery, onClose }) {
     localStorage.removeItem('sanexus_sessions');
   };
 
-  const handleNewsQuery = async (newsObj) => {
-    const newMsg = {
-        role: 'user',
-        isNewsCard: true,
-        newsData: newsObj,
-        content: `Tolong analisis berita ini: ${newsObj.title}`
-    };
-    setMessages(prev => [...prev, newMsg]);
-    setIsLoading(true);
-
-    const secretPrompt = `Tolong baca dan analisis berita dengan judul '${newsObj.title}'. Referensi link: ${newsObj.link}. Berikan ringkasan detail dari isi berita tersebut agar kita bisa mendiskusikannya lebih lanjut.`;
-
-    try {
-      const response = await fetch(`/api?question=${encodeURIComponent(secretPrompt)}`);
-      const data = await response.json();
-      if (response.ok) {
-        setMessages(prev => [...prev, { role: 'ai', content: data.answer, sources: data.sources, similar: data.similarQuestions }]);
-      } else {
-        setMessages(prev => [...prev, { role: 'ai', content: `Error: ${data.error}` }]);
-      }
-    } catch (error) {
-      setMessages(prev => [...prev, { role: 'ai', content: 'Gagal menyambung ke otak Sanexus. Pastikan API stabil.' }]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const performSearch = async (question) => {
-    if (!question.trim()) return;
-    
-    setMessages(prev => [...prev, { role: 'user', content: question }]);
-    setIsLoading(true);
-    setInputValue('');
-    setIsSidebarOpen(false);
-
-    let queryToSend = question;
-    if (messages.length > 0) {
-      const lastTopic = messages.filter(m => m.role === 'user').pop()?.content;
-      if (lastTopic) {
-        queryToSend = `Berdasarkan obrolan sebelumnya tentang "${lastTopic}", tolong jawab pertanyaan lanjutan ini: ${question}`;
-      }
-    }
-
-    try {
-      const response = await fetch(`/api?question=${encodeURIComponent(queryToSend)}`);
-      const data = await response.json();
-      
-      if (response.ok) {
-        setMessages(prev => [...prev, { role: 'ai', content: data.answer, sources: data.sources, similar: data.similarQuestions }]);
-      } else {
-        setMessages(prev => [...prev, { role: 'ai', content: `Error: ${data.error}` }]);
-      }
-    } catch (error) {
-      setMessages(prev => [...prev, { role: 'ai', content: 'Gagal menyambung ke otak Sanexus. Pastikan API stabil.' }]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSubmit = (e) => {
+  // LOGIKA KIRIM PESAN (BISA TEKS BIASA ATAU TEKS + KARTU BERITA)
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    performSearch(inputValue);
+
+    // 1. JIKA ADA DRAFT KARTU BERITA YANG MENGGANTUNG
+    if (pendingNews) {
+      const customText = inputValue.trim();
+      const newsObj = pendingNews;
+      
+      const newMsg = {
+          role: 'user',
+          isNewsCard: true,
+          newsData: newsObj,
+          content: customText || `Tolong analisis berita ini: ${newsObj.title}`
+      };
+      
+      setMessages(prev => [...prev, newMsg]);
+      setIsLoading(true);
+      setInputValue('');
+      setPendingNews(null); // Tutup kotak preview
+
+      // Rangkai Prompt Rahasia (Dinamis: Jika user ngetik instruksi, digabungin)
+      const secretPrompt = `Tolong baca dan analisis berita dengan judul '${newsObj.title}'. Referensi link: ${newsObj.link}. ${customText ? `Instruksi tambahan dari user: '${customText}'. Pastikan merespon sesuai instruksi tersebut.` : 'Berikan ringkasan detail dari isi berita tersebut agar kita bisa mendiskusikannya lebih lanjut.'}`;
+
+      try {
+        const response = await fetch(`/api?question=${encodeURIComponent(secretPrompt)}`);
+        const data = await response.json();
+        if (response.ok) {
+          setMessages(prev => [...prev, { role: 'ai', content: data.answer, sources: data.sources, similar: data.similarQuestions }]);
+        } else {
+          setMessages(prev => [...prev, { role: 'ai', content: `Error: ${data.error}` }]);
+        }
+      } catch (error) {
+        setMessages(prev => [...prev, { role: 'ai', content: 'Gagal menyambung ke otak Sanexus. Pastikan API stabil.' }]);
+      } finally {
+        setIsLoading(false);
+      }
+    } 
+    // 2. JIKA CUMA KIRIM TEKS BIASA (NGOBROL NORMAL)
+    else {
+      if (!inputValue.trim()) return;
+      const question = inputValue;
+      
+      setMessages(prev => [...prev, { role: 'user', content: question }]);
+      setIsLoading(true);
+      setInputValue('');
+      setIsSidebarOpen(false);
+
+      let queryToSend = question;
+      if (messages.length > 0) {
+        const lastTopic = messages.filter(m => m.role === 'user').pop()?.content;
+        if (lastTopic) {
+          queryToSend = `Berdasarkan obrolan sebelumnya tentang "${lastTopic}", tolong jawab pertanyaan lanjutan ini: ${question}`;
+        }
+      }
+
+      try {
+        const response = await fetch(`/api?question=${encodeURIComponent(queryToSend)}`);
+        const data = await response.json();
+        if (response.ok) {
+          setMessages(prev => [...prev, { role: 'ai', content: data.answer, sources: data.sources, similar: data.similarQuestions }]);
+        } else {
+          setMessages(prev => [...prev, { role: 'ai', content: `Error: ${data.error}` }]);
+        }
+      } catch (error) {
+        setMessages(prev => [...prev, { role: 'ai', content: 'Gagal menyambung ke otak Sanexus. Pastikan API stabil.' }]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
   };
 
   const MaterialIcon = ({ name }) => <span className="material-icons-round" style={{ fontFamily: '"Material Icons Round"', fontWeight: 'normal', fontStyle: 'normal', fontSize: '24px', lineHeight: 1, letterSpacing: 'normal', textTransform: 'none', display: 'inline-block', whiteSpace: 'nowrap', wordWrap: 'normal', direction: 'ltr', fontFeatureSettings: '"liga"', WebkitFontSmoothing: 'antialiased' }}>{name}</span>;
@@ -213,7 +219,8 @@ export default function SanexusChat({ initialQuery, onClose }) {
         .s-close-full-profile { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.1); border: none; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 310; }
         .s-collab-badge { background: linear-gradient(90deg, rgba(34,197,94,0.1) 0%, rgba(184,203,184,0.1) 100%); border: 1px solid rgba(184,203,184,0.3); padding: 8px 15px; border-radius: 20px; font-size: 0.75rem; color: var(--text-highlight); margin-bottom: 30px; letter-spacing: 0.5px; }
         
-        .s-chat-area { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 120px; scroll-behavior: smooth; }
+        /* AREA CHAT & INPUT DRAFT MODE */
+        .s-chat-area { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 160px; scroll-behavior: smooth; position: relative; }
         .s-greeting { font-family: var(--font-serif); font-size: 2.2rem; color: var(--text-highlight); margin-bottom: 30px; font-weight: 400; }
         .s-action-pill { background: var(--bg-card); border: 1px solid var(--border-glass); padding: 10px 16px; border-radius: 20px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px; color: var(--text-main); margin-right: 10px; }
         
@@ -229,8 +236,17 @@ export default function SanexusChat({ initialQuery, onClose }) {
         .s-list a, .s-list li { display: block; padding: 10px; background: rgba(0,0,0,0.2); margin-bottom: 8px; border-radius: 8px; color: var(--text-main); text-decoration: none; font-size: 0.85rem; }
         .s-list li { cursor: pointer; } .s-list li:hover, .s-list a:hover { background: rgba(255,255,255,0.1); }
         
-        .s-input-area { position: absolute; bottom: 0; left: 0; width: 100%; padding: 15px 20px 25px 20px; background: linear-gradient(0deg, var(--bg-dark) 80%, transparent 100%); z-index: 100; }
-        .s-search-bar { display: flex; align-items: center; background: #2a3330; border-radius: 50px; padding: 8px 8px 8px 20px; border: 1px solid var(--border-glass); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .s-input-container { position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(0deg, var(--bg-dark) 85%, transparent 100%); z-index: 100; display: flex; flex-direction: column; padding: 0 20px 25px 20px; }
+        
+        /* PREVIEW CARD STYLING */
+        .s-preview-card { background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: 12px; padding: 10px; display: flex; align-items: center; gap: 10px; margin-bottom: 10px; box-shadow: 0 -5px 20px rgba(0,0,0,0.3); animation: slideUp 0.3s ease-out; }
+        .s-preview-img { width: 45px; height: 45px; border-radius: 8px; object-fit: cover; }
+        .s-preview-text { flex: 1; overflow: hidden; }
+        .s-preview-title { font-size: 0.8rem; color: #fff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+        .s-preview-sub { font-size: 0.7rem; color: var(--text-muted); margin: 0; }
+        .s-preview-close { background: none; border: none; color: #ff6b6b; cursor: pointer; padding: 5px; display: flex; align-items: center; justify-content: center; }
+
+        .s-search-bar { display: flex; align-items: center; background: #2a3330; border-radius: 50px; padding: 8px 8px 8px 20px; border: 1px solid var(--border-glass); box-shadow: 0 4px 15px rgba(0,0,0,0.3); width: 100%; }
         .s-search-bar input { flex: 1; background: transparent; border: none; color: var(--text-main); font-size: 1rem; outline: none; }
         .s-submit-btn { width: 45px; height: 45px; border-radius: 50%; background: var(--text-main); color: var(--bg-dark); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
         .s-loader-pulse { width: 50px; height: 50px; background: var(--text-highlight); border-radius: 50%; margin: 0 auto 10px; animation: s-pulse-ring 1.5s infinite; }
@@ -291,23 +307,18 @@ export default function SanexusChat({ initialQuery, onClose }) {
           <button className="s-close-full-profile" onClick={() => setShowFullProfile(false)}>
             <MaterialIcon name="close" />
           </button>
-          
           <div className="s-collab-badge">
             Official Collaboration: IndoSawit.news x SanexusAI - Menciptakan ekosistem informasi cerdas.
           </div>
-
           <img src="https://e.top4top.io/p_3721610g20.jpg" alt="SANN404" style={{width: '120px', height: '120px', borderRadius: '50%', border: '3px solid #b8cbb8', objectFit: 'cover', marginBottom: '20px', boxShadow: '0 0 30px rgba(184,203,184,0.2)', flexShrink: 0}} />
-          
           <h1 style={{fontFamily: "'Playfair Display', serif", fontSize: '2.5rem', color: '#b8cbb8', marginBottom: '5px'}}>SANEXUSAI</h1>
           <h3 style={{fontSize: '1.5rem', color: '#ffffff', marginBottom: '20px', letterSpacing: '2px'}}>SANN404</h3>
           <p style={{fontSize: '0.9rem', color: '#8e9b95', marginBottom: '30px', maxWidth: '300px', lineHeight: '1.6'}}>Node.js Expert & AI Engine Developer. Berfokus pada pengembangan sistem arsitektur backend yang kuat.</p>
-          
           <div style={{display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '30px', flexShrink: 0}}>
             <a href="#" style={{background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '15px', color: '#fff', border: '1px solid rgba(255,255,255,0.1)'}}><Instagram size={20}/></a>
             <a href="#" style={{background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '15px', color: '#fff', border: '1px solid rgba(255,255,255,0.1)'}}><Send size={20}/></a>
             <a href="#" style={{background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '15px', color: '#fff', border: '1px solid rgba(255,255,255,0.1)'}}><TikTokIcon size={20}/></a>
           </div>
-
           <a href="https://whatsapp.com/channel/0029Vb6ukqnHQbS4mKP0j80L" target="_blank" rel="noreferrer" style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: '#25D366', color: '#000', padding: '15px 30px', borderRadius: '50px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 'bold', boxShadow: '0 10px 20px rgba(37,211,102,0.2)', flexShrink: 0, marginBottom: '40px'}}>
             <WhatsAppIcon size={20}/> JOIN SALURAN SANN404
           </a>
@@ -384,19 +395,32 @@ export default function SanexusChat({ initialQuery, onClose }) {
             <p>Sanexus is analyzing...</p>
           </div>
         )}
-        
         <div ref={messagesEndRef} />
       </main>
 
-      <div className="s-input-area">
+      {/* INPUT AREA BESERTA DRAFT KARTU BERITA */}
+      <div className="s-input-container">
+        {pendingNews && (
+          <div className="s-preview-card">
+            <img src={pendingNews.image} alt="preview" className="s-preview-img" />
+            <div className="s-preview-text">
+              <h4 className="s-preview-title">{pendingNews.title}</h4>
+              <p className="s-preview-sub">Tambahkan instruksi (opsional)...</p>
+            </div>
+            <button type="button" className="s-preview-close" onClick={() => setPendingNews(null)}>
+              <MaterialIcon name="close" />
+            </button>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="s-search-bar">
           <input 
             type="text" 
             value={inputValue} 
             onChange={(e) => setInputValue(e.target.value)} 
-            placeholder="Ketik pesan atau cari berita..." 
+            placeholder={pendingNews ? "Ketik instruksi analisis..." : "Ketik pesan atau cari berita..."} 
             disabled={isLoading}
-            required 
+            required={!pendingNews} /* Kalau ada draft berita, boleh dikirim kosong tanpa ketikan */
           />
           <button type="submit" disabled={isLoading} className="s-submit-btn" style={{opacity: isLoading ? 0.5 : 1}}>
             <MaterialIcon name="arrow_upward" />
