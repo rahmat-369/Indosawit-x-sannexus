@@ -11,16 +11,12 @@ const WhatsAppIcon = ({ size = 20, className = "" }) => (
 export default function SanexusChat({ initialQuery, onClose }) {
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
-  // STATE BARU: DRAFT PREVIEW
   const [pendingNews, setPendingNews] = useState(null);
-
   const [sessions, setSessions] = useState([]);
   const [currentSessionId, setCurrentSessionId] = useState(Date.now().toString());
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showFullProfile, setShowFullProfile] = useState(false);
   const [messages, setMessages] = useState([]);
-  
   const messagesEndRef = useRef(null);
   const hasInitialized = useRef(false);
 
@@ -32,7 +28,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
     scrollToBottom();
   }, [messages, isLoading, pendingNews]);
 
-  // LOAD SESI & TANGKAP QUERY BERITA
   useEffect(() => {
     if (!hasInitialized.current) {
       hasInitialized.current = true;
@@ -41,7 +36,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
       
       if (initialQuery) {
         if (typeof initialQuery === 'object' && initialQuery.type === 'news') {
-          // BUKAN DIKIRIM, TAPI DIMASUKIN KE DRAFT PREVIEW
           setPendingNews(initialQuery);
         } else if (typeof initialQuery === 'string' && initialQuery.trim() !== "") {
           performSearch(initialQuery);
@@ -50,7 +44,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
     }
   }, []);
 
-  // SIMPAN SESI OTOMATIS
   useEffect(() => {
     if (messages.length > 0) {
       setSessions(prevSessions => {
@@ -79,7 +72,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
     setMessages([]);
     setCurrentSessionId(Date.now().toString());
     setIsSidebarOpen(false);
-    setPendingNews(null); // Bersihin draft kalau ada
+    setPendingNews(null);
   };
 
   const loadSession = (id) => {
@@ -89,7 +82,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
       setCurrentSessionId(sessionToLoad.id);
     }
     setIsSidebarOpen(false);
-    setPendingNews(null); // Bersihin draft
+    setPendingNews(null);
   };
 
   const clearAllHistory = () => {
@@ -99,11 +92,11 @@ export default function SanexusChat({ initialQuery, onClose }) {
     localStorage.removeItem('sanexus_sessions');
   };
 
-  // LOGIKA KIRIM PESAN (BISA TEKS BIASA ATAU TEKS + KARTU BERITA)
+  // LOGIKA DUAL-ENGINE & AUTO FALLBACK
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 1. JIKA ADA DRAFT KARTU BERITA YANG MENGGANTUNG
+    // 1. JIKA MENGIRIM KARTU BERITA
     if (pendingNews) {
       const customText = inputValue.trim();
       const newsObj = pendingNews;
@@ -118,26 +111,45 @@ export default function SanexusChat({ initialQuery, onClose }) {
       setMessages(prev => [...prev, newMsg]);
       setIsLoading(true);
       setInputValue('');
-      setPendingNews(null); // Tutup kotak preview
+      setPendingNews(null);
 
-      // Rangkai Prompt Rahasia (Dinamis: Jika user ngetik instruksi, digabungin)
-      const secretPrompt = `Tolong baca dan analisis berita dengan judul '${newsObj.title}'. Referensi link: ${newsObj.link}. ${customText ? `Instruksi tambahan dari user: '${customText}'. Pastikan merespon sesuai instruksi tersebut.` : 'Berikan ringkasan detail dari isi berita tersebut agar kita bisa mendiskusikannya lebih lanjut.'}`;
+      // Prompt untuk Perplexity (Bisa baca link & instruksi detail)
+      const perplexityPrompt = `Tolong baca dan analisis berita dengan judul '${newsObj.title}'. Referensi link: ${newsObj.link}. ${customText ? `Instruksi tambahan dari user: '${customText}'. Pastikan merespon sesuai instruksi tersebut.` : 'Berikan ringkasan detail dari isi berita tersebut agar kita bisa mendiskusikannya lebih lanjut.'}`;
+
+      let finalData = null;
 
       try {
-        const response = await fetch(`/api?question=${encodeURIComponent(secretPrompt)}`);
-        const data = await response.json();
-        if (response.ok) {
-          setMessages(prev => [...prev, { role: 'ai', content: data.answer, sources: data.sources, similar: data.similarQuestions }]);
+        // Coba Engine 2: Perplexity (/api/ngobrol)
+        const resPerplexity = await fetch(`/api/ngobrol?question=${encodeURIComponent(perplexityPrompt)}`);
+        const dataPerplexity = await resPerplexity.json();
+        
+        if (resPerplexity.ok && !dataPerplexity.error) {
+          finalData = dataPerplexity; // Berhasil nembus Cloudflare!
         } else {
-          setMessages(prev => [...prev, { role: 'ai', content: `Error: ${data.error}` }]);
+          throw new Error("Perplexity gagal atau timeout"); // Lempar ke blok catch
         }
       } catch (error) {
-        setMessages(prev => [...prev, { role: 'ai', content: 'Gagal menyambung ke otak Sanexus. Pastikan API stabil.' }]);
-      } finally {
-        setIsLoading(false);
+        // AUTO FALLBACK: Coba Engine 1: Turboseek (/api) pakai Smart SEO Prompt
+        console.warn("Beralih ke Engine Turboseek...");
+        const fallbackPrompt = `Jelaskan fakta lengkap, detail, dan kronologi mengenai berita terkini: "${newsObj.title}". ${customText ? 'Fokus penjelasan pada: ' + customText : ''}`;
+        
+        try {
+          const resTurbo = await fetch(`/api?question=${encodeURIComponent(fallbackPrompt)}`);
+          finalData = await resTurbo.json();
+        } catch (errTurbo) {
+          finalData = { error: 'Kedua mesin pencari sedang sibuk. Coba lagi Mat 🗿' };
+        }
       }
+
+      // Tampilkan Jawaban
+      if (finalData && !finalData.error) {
+        setMessages(prev => [...prev, { role: 'ai', content: finalData.answer || finalData, sources: finalData.sources || [], similar: finalData.similarQuestions || [] }]);
+      } else {
+        setMessages(prev => [...prev, { role: 'ai', content: finalData?.error || 'Gagal merangkum berita.' }]);
+      }
+      setIsLoading(false);
     } 
-    // 2. JIKA CUMA KIRIM TEKS BIASA (NGOBROL NORMAL)
+    // 2. JIKA NGOBROL BIASA
     else {
       if (!inputValue.trim()) return;
       const question = inputValue;
@@ -148,14 +160,17 @@ export default function SanexusChat({ initialQuery, onClose }) {
       setIsSidebarOpen(false);
 
       let queryToSend = question;
+      // Inject konteks obrolan sebelumnya biar nyambung
       if (messages.length > 0) {
-        const lastTopic = messages.filter(m => m.role === 'user').pop()?.content;
+        const lastTopic = messages.filter(m => m.role === 'user').pop();
         if (lastTopic) {
-          queryToSend = `Berdasarkan obrolan sebelumnya tentang "${lastTopic}", tolong jawab pertanyaan lanjutan ini: ${question}`;
+           const contextText = lastTopic.isNewsCard ? lastTopic.newsData.title : lastTopic.content;
+           queryToSend = `Berdasarkan topik kita sebelumnya tentang "${contextText}", tolong jawab: ${question}`;
         }
       }
 
       try {
+        // Pakai Engine 1 (Turboseek) untuk ngobrol cepat
         const response = await fetch(`/api?question=${encodeURIComponent(queryToSend)}`);
         const data = await response.json();
         if (response.ok) {
@@ -219,7 +234,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
         .s-close-full-profile { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.1); border: none; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 310; }
         .s-collab-badge { background: linear-gradient(90deg, rgba(34,197,94,0.1) 0%, rgba(184,203,184,0.1) 100%); border: 1px solid rgba(184,203,184,0.3); padding: 8px 15px; border-radius: 20px; font-size: 0.75rem; color: var(--text-highlight); margin-bottom: 30px; letter-spacing: 0.5px; }
         
-        /* AREA CHAT & INPUT DRAFT MODE */
         .s-chat-area { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 160px; scroll-behavior: smooth; position: relative; }
         .s-greeting { font-family: var(--font-serif); font-size: 2.2rem; color: var(--text-highlight); margin-bottom: 30px; font-weight: 400; }
         .s-action-pill { background: var(--bg-card); border: 1px solid var(--border-glass); padding: 10px 16px; border-radius: 20px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px; color: var(--text-main); margin-right: 10px; }
@@ -238,7 +252,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
         
         .s-input-container { position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(0deg, var(--bg-dark) 85%, transparent 100%); z-index: 100; display: flex; flex-direction: column; padding: 0 20px 25px 20px; }
         
-        /* PREVIEW CARD STYLING */
         .s-preview-card { background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: 12px; padding: 10px; display: flex; align-items: center; gap: 10px; margin-bottom: 10px; box-shadow: 0 -5px 20px rgba(0,0,0,0.3); animation: slideUp 0.3s ease-out; }
         .s-preview-img { width: 45px; height: 45px; border-radius: 8px; object-fit: cover; }
         .s-preview-text { flex: 1; overflow: hidden; }
@@ -378,7 +391,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
                       <ul className="s-list" style={{listStyle: 'none', padding: 0, margin: 0}}>
                         {msg.similar.map((q, i) => {
                           const text = q.question || q;
-                          return <li key={i} onClick={() => performSearch(text)}>{text}</li>;
+                          return <li key={i} onClick={() => { setInputValue(text); }} style={{cursor:'pointer'}}>{text}</li>;
                         })}
                       </ul>
                     </div>
@@ -398,7 +411,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
         <div ref={messagesEndRef} />
       </main>
 
-      {/* INPUT AREA BESERTA DRAFT KARTU BERITA */}
       <div className="s-input-container">
         {pendingNews && (
           <div className="s-preview-card">
@@ -420,7 +432,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
             onChange={(e) => setInputValue(e.target.value)} 
             placeholder={pendingNews ? "Ketik instruksi analisis..." : "Ketik pesan atau cari berita..."} 
             disabled={isLoading}
-            required={!pendingNews} /* Kalau ada draft berita, boleh dikirim kosong tanpa ketikan */
+            required={!pendingNews}
           />
           <button type="submit" disabled={isLoading} className="s-submit-btn" style={{opacity: isLoading ? 0.5 : 1}}>
             <MaterialIcon name="arrow_upward" />
