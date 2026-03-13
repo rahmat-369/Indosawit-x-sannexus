@@ -30,6 +30,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
   const [sessions, setSessions] = useState([]);
   const [currentSessionId, setCurrentSessionId] = useState(Date.now().toString());
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showFullProfile, setShowFullProfile] = useState(false); // STATE PROFIL
   const [toastMsg, setToastMsg] = useState("");
   
   const [activeModel, setActiveModel] = useState('auto');
@@ -92,7 +93,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
   }, [messages, currentSessionId]);
 
   // 🔥 THE "TRIO MACAN" LOGIC (AGENTIC INTERPRETER)
-  // skipUserMessage dipakai buat Kartu Berita biar gak Double Bubble
   const performSearch = async (queryText, forceModel = null, skipUserMessage = false) => {
       if (!queryText.trim()) return;
 
@@ -103,7 +103,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
       setInputValue('');
       setIsSidebarOpen(false);
 
-      // Secara default, AUTO akan menggunakan Sanexus/Fast biar Source + Similar Question muncul!
       let targetModel = forceModel || (activeModel === 'auto' ? 'fast' : activeModel);
       let apiQuery = queryText;
 
@@ -111,25 +110,21 @@ export default function SanexusChat({ initialQuery, onClose }) {
       if (activeModel === 'auto' && messages.length > 0) {
         const history = messages.slice(-2).map(m => m.content).join(" | ");
         
-        // Cek kalau pertanyaannya cuma pendek/menggantung (e.g., "Apa aja tuh", "Lanjut", "Kenapa")
+        // Cek kalau pertanyaannya cuma pendek/menggantung
         if (queryText.split(" ").length < 6) {
            setLoadingText("Meminta penerjemah menganalisis niat Anda...");
            const translatorPrompt = `Berikan SATU KALIMAT pertanyaan pencarian utuh berdasarkan riwayat ini. Riwayat: "${history}". Pertanyaan user: "${queryText}". Jangan jawab pertanyaannya, berikan kalimat pencariannya saja.`;
            try {
-              // Diem-diem nanya Perplexity (Orang Ke-3)
               const res = await fetch(`/api/ngobrol?question=${encodeURIComponent(translatorPrompt)}`);
               const data = await res.json();
               if (data.answer && data.answer.length < 150) {
-                 apiQuery = data.answer; // Kalimat sudah rapi dan jelas!
+                 apiQuery = data.answer; 
               }
-           } catch(e) {} // Kalau gagal, tetep pakai query asli
+           } catch(e) {} 
         }
-        
-        // Tambahin konteks sebagai pengaman ke Sanexus (Orang Ke-1)
         apiQuery = `Konteks Obrolan: ${history}. Pertanyaan: ${apiQuery}`;
       }
 
-      // Kalau user MANUAL milih DEEP, baru kita ganti jalurnya ke Perplexity seutuhnya
       if (activeModel === 'deep') targetModel = 'deep';
       
       const endpoint = targetModel === 'deep' ? '/api/ngobrol' : '/api';
@@ -162,7 +157,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
     if (pendingNews) {
       const customText = inputValue.trim();
       
-      // BUBBLE TUNGGAL EKSKLUSIF (Anti Double Bubble)
+      // BUBBLE TUNGGAL EKSKLUSIF
       const newMsg = {
           role: 'user',
           isNewsCard: true,
@@ -173,10 +168,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
       setPendingNews(null);
       setInputValue('');
       
-      // Pesan Siluman buat API (Gak akan dicetak ke layar lagi)
       const hiddenPrompt = `Tolong baca dan analisis berita ini. Judul: '${pendingNews.title}'. Link: ${pendingNews.link}. Instruksi Tambahan: ${customText || 'Berikan rangkuman komprehensif.'}`;
-      
-      // Kirim hiddenPrompt tanpa bikin bubble user baru (skipUserMessage = true)
       performSearch(hiddenPrompt, 'fast', true); 
     } else {
       performSearch(inputValue);
@@ -259,10 +251,19 @@ export default function SanexusChat({ initialQuery, onClose }) {
         .s-model-opt { font-size: 10px; color: #8e9b95; cursor: pointer; padding: 5px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); font-weight: 700; }
         .s-model-opt.active { background: #b8cbb8; color: #000; border-color: #b8cbb8; }
 
-        /* SIDEBAR */
+        /* SIDEBAR & PROFILE */
         .s-sidebar { position: fixed; top: 0; left: -100%; width: 100%; height: 100%; z-index: 200; background: rgba(0,0,0,0.6); transition: 0.3s; }
         .s-sidebar.visible { left: 0; }
         .s-sidebar-content { width: 80%; max-width: 300px; height: 100%; background: #0a0d0c; padding: 25px 20px; display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.05); }
+        .s-mini-profile { display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(184, 203, 184, 0.05); border: 1px solid rgba(184, 203, 184, 0.2); border-radius: 12px; cursor: pointer; transition: 0.2s; margin-top: auto; }
+        .s-mini-profile img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #b8cbb8; object-fit: cover; }
+        .s-mini-profile-info h4 { font-size: 0.9rem; color: #fff; margin: 0; font-weight: 700; }
+        .s-mini-profile-info p { font-size: 0.7rem; color: #8e9b95; margin: 0; }
+
+        /* FULL PROFILE OVERLAY */
+        .s-full-profile-overlay { position: fixed; inset: 0; background: #050705; z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 60px 20px 40px 20px; text-align: center; overflow-y: auto; }
+        .s-close-full-profile { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.1); border: none; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 310; cursor: pointer; }
+        .s-collab-badge { background: linear-gradient(90deg, rgba(34,197,94,0.1) 0%, rgba(184,203,184,0.1) 100%); border: 1px solid rgba(184,203,184,0.3); padding: 8px 15px; border-radius: 20px; font-size: 0.75rem; color: #b8cbb8; margin-bottom: 30px; letter-spacing: 0.5px; font-weight: 700; }
 
         .s-toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: #a3b8a3; color: #050705; padding: 8px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; z-index: 1000; box-shadow: 0 4px 15px rgba(163,184,163,0.3); }
         
@@ -275,12 +276,12 @@ export default function SanexusChat({ initialQuery, onClose }) {
       {toastMsg && <div className="s-toast">{toastMsg}</div>}
 
       <header className="s-header">
-        <button className="s-btn" onClick={() => setIsSidebarOpen(true)} style={{background: 'none', border: 'none', color: '#fff'}}><MaterialIcon name="grid_view" /></button>
+        <button className="s-btn" onClick={() => setIsSidebarOpen(true)} style={{background: 'none', border: 'none', color: '#fff', cursor: 'pointer'}}><MaterialIcon name="grid_view" /></button>
         <span style={{fontFamily: "'Playfair Display', serif", color: '#b8cbb8', fontWeight: 'bold', fontSize: '1.2rem'}}>SanexusAI</span>
-        <button className="s-btn" onClick={onClose} style={{background: 'none', border: 'none', color: '#ff6b6b'}}><MaterialIcon name="close" /></button>
+        <button className="s-btn" onClick={onClose} style={{background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer'}}><MaterialIcon name="close" /></button>
       </header>
 
-      {/* SIDEBAR */}
+      {/* SIDEBAR & MINI PROFILE */}
       <aside className={`s-sidebar ${isSidebarOpen ? 'visible' : ''}`} onClick={() => setIsSidebarOpen(false)}>
         <div className="s-sidebar-content" onClick={e => e.stopPropagation()}>
            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
@@ -298,28 +299,61 @@ export default function SanexusChat({ initialQuery, onClose }) {
              ))}
            </div>
            {sessions.length > 0 && <button onClick={clearAllHistory} style={{padding: '12px', background: 'rgba(255,0,0,0.1)', border: '1px solid rgba(255,0,0,0.2)', borderRadius: '12px', color: '#ff6b6b', fontWeight: 'bold', marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer'}}><Trash2 size={16}/> Bersihkan Semua</button>}
+           
+           {/* MINI PROFILE IS BACK */}
+           <div className="s-mini-profile" onClick={() => { setIsSidebarOpen(false); setShowFullProfile(true); }}>
+             <img src="https://e.top4top.io/p_3721610g20.jpg" alt="SANN404" />
+             <div className="s-mini-profile-info">
+               <h4>SANN404</h4>
+               <p>Developer Info</p>
+             </div>
+           </div>
         </div>
       </aside>
 
+      {/* FULL PROFILE OVERLAY IS BACK */}
+      {showFullProfile && (
+        <div className="s-full-profile-overlay">
+          <button className="s-close-full-profile" onClick={() => setShowFullProfile(false)}>
+            <MaterialIcon name="close" />
+          </button>
+          <div className="s-collab-badge">
+            Official Collaboration: IndoSawit.news x SanexusAI
+          </div>
+          <img src="https://e.top4top.io/p_3721610g20.jpg" alt="SANN404" style={{width: '120px', height: '120px', borderRadius: '50%', border: '3px solid #b8cbb8', objectFit: 'cover', marginBottom: '20px'}} />
+          <h1 style={{fontFamily: "'Playfair Display', serif", fontSize: '2.5rem', color: '#b8cbb8', marginBottom: '5px'}}>SANEXUSAI</h1>
+          <h3 style={{fontSize: '1.5rem', color: '#ffffff', marginBottom: '20px', letterSpacing: '2px'}}>SANN404</h3>
+          <p style={{fontSize: '0.9rem', color: '#8e9b95', marginBottom: '30px', maxWidth: '300px', lineHeight: '1.6'}}>Node.js Expert & AI Engine Developer.</p>
+          <div style={{display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '30px'}}>
+            <a href="#" style={{background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '15px', color: '#fff'}}><Instagram size={20}/></a>
+            <a href="#" style={{background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '15px', color: '#fff'}}><Send size={20}/></a>
+            <a href="#" style={{background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '15px', color: '#fff'}}><TikTokIcon size={20}/></a>
+          </div>
+          <a href="https://whatsapp.com/channel/0029Vb6ukqnHQbS4mKP0j80L" target="_blank" rel="noreferrer" style={{display: 'flex', alignItems: 'center', gap: '10px', background: 'white', color: '#000', padding: '15px 30px', borderRadius: '50px', textDecoration: 'none', fontWeight: 'bold'}}>
+            <WhatsAppIcon size={20}/> JOIN SALURAN SANN404
+          </a>
+        </div>
+      )}
+
       <main className="s-chat-area">
-        {/* WELCOME SCREEN & INFO MARKET WIDGET */}
+        {/* WELCOME SCREEN & WIDGET INFO MARKET */}
         {messages.length === 0 && !isLoading && (
           <div className="s-welcome-container">
             <h2 className="s-welcome-title">Welcome Sir, <br/><span className="s-welcome-subtitle">User</span></h2>
             
             <div className="s-pill-scroll">
-              <div className="s-action-pill" onClick={() => performSearch("Berita Politik Terkini")}><Briefcase size={14}/> Job Finder UX</div>
-              <div className="s-action-pill" onClick={() => performSearch("Perkembangan AI")}><Megaphone size={14}/> Marketing Strategy</div>
+              <div className="s-action-pill" onClick={() => performSearch("Berita Politik Terkini")}><Briefcase size={16}/> Job Finder UX</div>
+              <div className="s-action-pill" onClick={() => performSearch("Perkembangan AI")}><Megaphone size={16}/> Marketing Strategy</div>
             </div>
 
             <div className="s-card-grid">
               <div className="s-big-card" onClick={() => performSearch("Analisis strategi bisnis terbaru")}>
-                <Briefcase size={24} className="s-big-card-icon" />
+                <Briefcase size={26} className="s-big-card-icon" />
                 <h3 className="s-big-card-title">Business</h3>
                 <p className="s-big-card-desc">Analyze market trends and business strategies.</p>
               </div>
               <div className="s-big-card" onClick={() => performSearch("Update harga sawit, IHSG, dan crypto hari ini")}>
-                <TrendingUp size={24} className="s-big-card-icon" />
+                <TrendingUp size={26} className="s-big-card-icon" />
                 <h3 className="s-big-card-title">Info Market</h3>
                 <p className="s-big-card-desc">Pantau harga sawit, IHSG, emas, dan crypto.</p>
               </div>
@@ -345,10 +379,11 @@ export default function SanexusChat({ initialQuery, onClose }) {
                   )}
                   {msg.content && <span>{msg.content}</span>}
                 </div>
+                {/* IKON SUDAH PROPORSIONAL SIZE 16 */}
                 <div style={{display: 'flex', gap: '15px', marginRight: '5px', marginTop: '5px'}}>
-                   <button className="s-action-icon" onClick={() => handleEdit(msg.content)} title="Edit"><Edit2 size={14}/></button>
-                   <button className="s-action-icon" onClick={() => handleCopy(msg.content)} title="Salin"><Copy size={14}/></button>
-                   <button className="s-action-icon" onClick={() => handleShare(msg.content, nextAiMsg)} title="Bagikan"><Share2 size={14}/></button>
+                   <button className="s-action-icon" onClick={() => handleEdit(msg.content)} title="Edit"><Edit2 size={16}/></button>
+                   <button className="s-action-icon" onClick={() => handleCopy(msg.content)} title="Salin"><Copy size={16}/></button>
+                   <button className="s-action-icon" onClick={() => handleShare(msg.content, nextAiMsg)} title="Bagikan"><Share2 size={16}/></button>
                 </div>
               </div>
             ) : (
@@ -357,22 +392,23 @@ export default function SanexusChat({ initialQuery, onClose }) {
                   <span className="s-model-tag">⚡ {msg.model === 'deep' ? 'Deep Search' : 'Fast Chat'}</span>
                   <div dangerouslySetInnerHTML={formatMarkdown(msg.content)} />
                 </div>
+                {/* IKON SUDAH PROPORSIONAL SIZE 16 */}
                 <div style={{display: 'flex', gap: '15px', marginLeft: '5px', marginTop: '5px'}}>
-                   <button className="s-action-icon" onClick={() => handleCopy(msg.content)} title="Salin"><Copy size={14}/></button>
-                   <button className="s-action-icon" onClick={() => performSearch(messages[i-1]?.content)} title="Regenerate"><RefreshCw size={14}/></button>
+                   <button className="s-action-icon" onClick={() => handleCopy(msg.content)} title="Salin"><Copy size={16}/></button>
+                   <button className="s-action-icon" onClick={() => performSearch(messages[i-1]?.content)} title="Regenerate"><RefreshCw size={16}/></button>
                 </div>
 
                 {/* THE RETURN OF SOURCE CARDS */}
                 {msg.sources?.length > 0 && (
                   <div className="s-sources-grid">
-                    <div style={{display: 'flex', alignItems: 'center', gap: '6px', color: '#8e9b95', fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '2px', marginLeft: '5px'}}>
-                      <Globe size={12}/> Sumber Terpercaya
+                    <div style={{display: 'flex', alignItems: 'center', gap: '6px', color: '#8e9b95', fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '2px', marginLeft: '5px'}}>
+                      <Globe size={14}/> Sumber Terpercaya
                     </div>
                     {msg.sources.slice(0, 5).map((url, index) => {
                       let domain = url; try { domain = new URL(url).hostname; } catch(e){}
                       return (
                         <a key={index} href={url} target="_blank" rel="noreferrer" className="s-source-card">
-                          <div style={{background: 'rgba(184, 203, 184, 0.1)', padding: '8px', borderRadius: '8px', color: '#b8cbb8', display: 'flex'}}><LinkIcon size={14}/></div>
+                          <div style={{background: 'rgba(184, 203, 184, 0.1)', padding: '8px', borderRadius: '8px', color: '#b8cbb8', display: 'flex'}}><LinkIcon size={16}/></div>
                           <span className="s-source-domain">{domain}</span>
                         </a>
                       );
@@ -383,7 +419,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
                 {/* THE RETURN OF SIMILAR QUESTIONS */}
                 {msg.similar?.length > 0 && (
                   <div className="s-similar-box">
-                    <div className="s-similar-title"><MessageCircle size={12}/> Pertanyaan Terkait</div>
+                    <div className="s-similar-title"><MessageCircle size={14}/> Pertanyaan Terkait</div>
                     {msg.similar.map((q, idx) => {
                       const textQ = typeof q === 'string' ? q : q.question;
                       return (
@@ -426,19 +462,19 @@ export default function SanexusChat({ initialQuery, onClose }) {
         {/* LACI MODEL & INFO TOOLTIP */}
         <div className="s-model-bar">
           <div className="s-model-trigger" onClick={() => setIsModelSelectorOpen(!isModelSelectorOpen)}>
-            {isModelSelectorOpen ? <ChevronDown size={12}/> : <ChevronUp size={12}/>}
-            Pilih Model: <span className="text-[#b8cbb8] ml-1">{activeModel.toUpperCase()}</span>
+            {isModelSelectorOpen ? <ChevronDown size={14}/> : <ChevronUp size={14}/>}
+            Pilih Model: <span className="text-[#b8cbb8] ml-1" style={{fontSize: '11px'}}>{activeModel.toUpperCase()}</span>
           </div>
           
           <div style={{cursor: 'pointer', color: '#8e9b95'}} onClick={() => setShowInfo(!showInfo)}>
-            <HelpCircle size={12}/>
+            <HelpCircle size={14}/>
           </div>
 
           {showInfo && (
             <div className="s-model-info-pop">
               <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '12px', alignItems: 'center'}}>
-                <span className="font-bold text-[12px] text-[#b8cbb8] uppercase tracking-widest flex items-center gap-2"><BrainCircuit size={14}/> Sanexus Engine</span>
-                <Trash2 size={12} color="#ff6b6b" style={{cursor: 'pointer'}} onClick={() => setShowInfo(false)}/>
+                <span className="font-bold text-[12px] text-[#b8cbb8] uppercase tracking-widest flex items-center gap-2"><BrainCircuit size={16}/> Sanexus Engine</span>
+                <Trash2 size={14} color="#ff6b6b" style={{cursor: 'pointer'}} onClick={() => setShowInfo(false)}/>
               </div>
               <div className="text-[11px] space-y-3 leading-relaxed text-[#e2e8f0]">
                 <p><span className="text-[#5de2ff] font-bold">AUTO:</span> Deteksi otomatis. Fast untuk ngobrol, Deep untuk cari berita/riset.</p>
@@ -468,7 +504,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
             required={!pendingNews}
           />
           <button type="submit" className="s-submit-btn" disabled={isLoading}>
-            <Send size={16} />
+            <Send size={18} />
           </button>
         </form>
       </div>
