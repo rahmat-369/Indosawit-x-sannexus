@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Instagram, Send, MessageCircle, PlusCircle, Trash2, Copy, RefreshCw, Edit2, Share2, ChevronUp, ChevronDown, HelpCircle, Globe, Link as LinkIcon, Zap, BrainCircuit, Briefcase, Code, Megaphone, TerminalSquare } from 'lucide-react';
+import { Instagram, Send, MessageCircle, PlusCircle, Trash2, Copy, RefreshCw, Edit2, Share2, ChevronUp, ChevronDown, HelpCircle, Globe, Link as LinkIcon, Zap, BrainCircuit, Briefcase, Megaphone, TrendingUp } from 'lucide-react';
 
-// ICON CUSTOM
 const TikTokIcon = ({ size = 20, className = "" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
 );
@@ -9,7 +8,6 @@ const WhatsAppIcon = ({ size = 20, className = "" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
 );
 
-// RENDERER MARKDOWN (SITASI SUPERSCRIPT)
 const formatMarkdown = (text) => {
   if (!text) return "";
   let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong class="text-gray-900 font-extrabold">$1</strong>');
@@ -17,10 +15,7 @@ const formatMarkdown = (text) => {
   formatted = formatted.replace(/^## (.*$)/gim, '<h2 class="font-black text-xl mt-6 mb-3 text-[#a3b8a3] border-b border-black/5 pb-2">$1</h2>');
   formatted = formatted.replace(/^# (.*$)/gim, '<h1 class="font-black text-2xl mt-6 mb-4 text-[#b8cbb8]">$1</h1>');
   formatted = formatted.replace(/^\d+\.\s(.*$)/gim, '<div class="ml-4 mb-2 flex"><span class="mr-2 font-bold text-[#a3b8a3]">•</span><span>$1</span></div>');
-  
-  // Sitasi Pangkat Kecil
   formatted = formatted.replace(/\[(\d+)\]/g, '<sup class="text-[#a3b8a3] font-bold ml-0.5 px-0.5 cursor-help" title="Lihat Sumber di Bawah">$1</sup>');
-  
   formatted = formatted.replace(/\n/g, '<br />');
   return { __html: formatted };
 };
@@ -44,12 +39,9 @@ export default function SanexusChat({ initialQuery, onClose }) {
   const messagesEndRef = useRef(null);
   const hasInitialized = useRef(false);
 
-  // AUTO SCROLL
-  useEffect(() => { 
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); 
-  }, [messages, isLoading, loadingText]);
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [messages, isLoading, loadingText]);
 
-  // ANIMASI LOADING (TEKS DINAMIS + ANIMASI ORIGINAL)
+  // ANIMASI LOADING TETAP ORIGINAL SANEXUS DENGAN TEKS DINAMIS
   useEffect(() => {
     let timer;
     if (isLoading) {
@@ -57,14 +49,12 @@ export default function SanexusChat({ initialQuery, onClose }) {
         "Sanexus sedang memikirkan...", 
         "Memahami konteks obrolan...", 
         "Mencari & memvalidasi data...", 
-        "Menyusun jawaban terbaik...", 
-        "Menulis hasil akhir..."
+        "Menyusun jawaban terbaik..."
       ];
       let step = 0;
       const updateLoadingText = () => {
         setLoadingText(texts[step % texts.length]);
         step++;
-        // Kecepatan acak kyk AI lagi mikir keras
         timer = setTimeout(updateLoadingText, Math.floor(Math.random() * 1500) + 1000);
       };
       timer = setTimeout(updateLoadingText, 500);
@@ -74,7 +64,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
     return () => clearTimeout(timer);
   }, [isLoading]);
 
-  // LOAD SESI & INITIAL QUERY
   useEffect(() => {
     if (!hasInitialized.current) {
       hasInitialized.current = true;
@@ -85,7 +74,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
     }
   }, []);
 
-  // SAVE SESI OTOMATIS
   useEffect(() => {
     if (messages.length > 0) {
       const saved = JSON.parse(localStorage.getItem('sanexus_sessions')) || [];
@@ -103,37 +91,52 @@ export default function SanexusChat({ initialQuery, onClose }) {
     }
   }, [messages, currentSessionId]);
 
-  // 🧠 LOGIKA PENCARIAN (INTERPRETER PATTERN & AUTO MODE)
-  const performSearch = async (queryText, forceModel = null) => {
+  // 🔥 THE "TRIO MACAN" LOGIC (AGENTIC INTERPRETER)
+  // skipUserMessage dipakai buat Kartu Berita biar gak Double Bubble
+  const performSearch = async (queryText, forceModel = null, skipUserMessage = false) => {
       if (!queryText.trim()) return;
 
-      // 1. Deteksi Auto Mode (Diperketat)
-      // Hanya masuk Deep kalau eksplisit disuruh nyari berita, analisis, kronologi, dsb.
-      const needsDeep = /berita|kasus|kronologi|analisis mendalam|cari di internet/i.test(queryText);
-      const targetModel = forceModel || (activeModel === 'auto' ? (needsDeep ? 'deep' : 'fast') : activeModel);
-      
-      // 2. Interpreter Logic (Juru Bicara AI)
-      // Gabungin pesan sebelumnya biar Fast/Deep tetep nyambung kalau user nanya "Lanjutannya mana?"
-      let contextQuery = queryText;
-      if (messages.length > 0) {
-        const history = messages.slice(-3).map(m => {
-          const sender = m.role === 'user' ? 'User' : 'AI';
-          const text = m.content ? m.content.substring(0, 150) : 'Konteks Gambar/Berita';
-          return `${sender}: ${text}`;
-        }).join("\n");
-        // Kasih instruksi rahasia ke AI biar dia paham ini obrolan berlanjut
-        contextQuery = `RIWAYAT OBROLAN SEBELUMNYA:\n${history}\n\nPERTANYAAN USER SAAT INI (Tolong jawab berdasarkan riwayat di atas jika berkaitan): ${queryText}`;
+      if (!skipUserMessage) {
+         setMessages(prev => [...prev, { role: 'user', content: queryText }]);
       }
-
-      setMessages(prev => [...prev, { role: 'user', content: queryText }]);
       setIsLoading(true);
       setInputValue('');
       setIsSidebarOpen(false);
 
+      // Secara default, AUTO akan menggunakan Sanexus/Fast biar Source + Similar Question muncul!
+      let targetModel = forceModel || (activeModel === 'auto' ? 'fast' : activeModel);
+      let apiQuery = queryText;
+
+      // ANALOGI ORANG KE-3 (Perplexity Penerjemah)
+      if (activeModel === 'auto' && messages.length > 0) {
+        const history = messages.slice(-2).map(m => m.content).join(" | ");
+        
+        // Cek kalau pertanyaannya cuma pendek/menggantung (e.g., "Apa aja tuh", "Lanjut", "Kenapa")
+        if (queryText.split(" ").length < 6) {
+           setLoadingText("Meminta penerjemah menganalisis niat Anda...");
+           const translatorPrompt = `Berikan SATU KALIMAT pertanyaan pencarian utuh berdasarkan riwayat ini. Riwayat: "${history}". Pertanyaan user: "${queryText}". Jangan jawab pertanyaannya, berikan kalimat pencariannya saja.`;
+           try {
+              // Diem-diem nanya Perplexity (Orang Ke-3)
+              const res = await fetch(`/api/ngobrol?question=${encodeURIComponent(translatorPrompt)}`);
+              const data = await res.json();
+              if (data.answer && data.answer.length < 150) {
+                 apiQuery = data.answer; // Kalimat sudah rapi dan jelas!
+              }
+           } catch(e) {} // Kalau gagal, tetep pakai query asli
+        }
+        
+        // Tambahin konteks sebagai pengaman ke Sanexus (Orang Ke-1)
+        apiQuery = `Konteks Obrolan: ${history}. Pertanyaan: ${apiQuery}`;
+      }
+
+      // Kalau user MANUAL milih DEEP, baru kita ganti jalurnya ke Perplexity seutuhnya
+      if (activeModel === 'deep') targetModel = 'deep';
+      
       const endpoint = targetModel === 'deep' ? '/api/ngobrol' : '/api';
 
       try {
-        const response = await fetch(`${endpoint}?question=${encodeURIComponent(contextQuery)}`);
+        setLoadingText("Sanexus sedang memvalidasi data...");
+        const response = await fetch(`${endpoint}?question=${encodeURIComponent(apiQuery)}`);
         const data = await response.json();
         
         if (response.ok && !data.error) {
@@ -142,24 +145,13 @@ export default function SanexusChat({ initialQuery, onClose }) {
             content: data.answer || data, 
             model: targetModel,
             sources: data.sources || [],
-            similar: data.similarQuestions || [] // Balikin Similar Questions!
+            similar: data.similarQuestions || []
           }]);
         } else {
           throw new Error("API Error");
         }
       } catch (error) {
-        // Fallback pinter, kalau Deep gagal, coba Fast
-        if (targetModel === 'deep') {
-           try {
-             const resTurbo = await fetch(`/api?question=${encodeURIComponent(contextQuery)}`);
-             const dataTurbo = await resTurbo.json();
-             setMessages(prev => [...prev, { role: 'ai', content: dataTurbo.answer, model: 'fast', sources: dataTurbo.sources || [], similar: dataTurbo.similarQuestions || [] }]);
-           } catch(err) {
-             setMessages(prev => [...prev, { role: 'ai', content: 'Gagal menyambung ke Sanexus.' }]);
-           }
-        } else {
-           setMessages(prev => [...prev, { role: 'ai', content: 'Gagal menyambung ke otak Sanexus.' }]);
-        }
+        setMessages(prev => [...prev, { role: 'ai', content: 'Gagal menyambung ke jaringan Sanexus.' }]);
       } finally { setIsLoading(false); }
   };
 
@@ -169,19 +161,23 @@ export default function SanexusChat({ initialQuery, onClose }) {
 
     if (pendingNews) {
       const customText = inputValue.trim();
+      
+      // BUBBLE TUNGGAL EKSKLUSIF (Anti Double Bubble)
       const newMsg = {
           role: 'user',
           isNewsCard: true,
           newsData: pendingNews,
-          content: customText || `Tolong analisis berita ini: ${pendingNews.title}`
+          content: customText
       };
-      
       setMessages(prev => [...prev, newMsg]);
-      setIsLoading(true); setInputValue(''); setPendingNews(null);
+      setPendingNews(null);
+      setInputValue('');
       
-      // Paksa baca pakai Deep Search
-      const contextPrompt = `Tolong baca dan analisis berita ini. Judul: '${pendingNews.title}'. Link: ${pendingNews.link}. Instruksi Tambahan: ${customText ? customText : 'Berikan rangkuman.'}`;
-      performSearch(contextPrompt, 'deep');
+      // Pesan Siluman buat API (Gak akan dicetak ke layar lagi)
+      const hiddenPrompt = `Tolong baca dan analisis berita ini. Judul: '${pendingNews.title}'. Link: ${pendingNews.link}. Instruksi Tambahan: ${customText || 'Berikan rangkuman komprehensif.'}`;
+      
+      // Kirim hiddenPrompt tanpa bikin bubble user baru (skipUserMessage = true)
+      performSearch(hiddenPrompt, 'fast', true); 
     } else {
       performSearch(inputValue);
     }
@@ -190,7 +186,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
   const handleCopy = (t) => { navigator.clipboard.writeText(t); setToastMsg("Tersalin!"); setTimeout(()=>setToastMsg(""), 2000); };
   const handleEdit = (text) => { setInputValue(text); setToastMsg("Pesan dimasukkan ke kolom ketik"); setTimeout(()=>setToastMsg(""), 2000); };
   const handleShare = async (userText, aiText) => {
-    const shareText = `*Tanya:* ${userText}\n\n*SanexusAI:*\n${aiText || 'Sedang memproses...'}\n\n_Cari tahu di IndoSawit.news_`;
+    const shareText = `*Tanya:* ${userText}\n\n*SanexusAI:*\n${aiText || 'Sedang memproses...'}\n\n_Pantau Info Market di IndoSawit.news_`;
     if (navigator.share) { try { await navigator.share({ title: 'Sanexus AI', text: shareText }); } catch (err) {} } 
     else { handleCopy(shareText); setToastMsg("Teks disalin"); setTimeout(()=>setToastMsg(""), 2000); }
   };
@@ -213,7 +209,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
         .s-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); background: #050705; z-index: 50; }
         .s-chat-area { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 220px; scroll-behavior: smooth; }
         
-        /* WELCOME SCREEN (Dikembalikan 100%) */
+        /* WELCOME SCREEN & WIDGET INFO MARKET */
         .s-welcome-container { margin-top: 20px; animation: smoothPop 0.5s ease-out forwards; }
         .s-welcome-title { font-family: 'Playfair Display', serif; font-size: 2.8rem; color: #b8cbb8; margin-bottom: 25px; line-height: 1.1; font-weight: 400; }
         .s-welcome-subtitle { font-family: 'Playfair Display', serif; color: #fff; font-weight: 700; }
@@ -234,13 +230,13 @@ export default function SanexusChat({ initialQuery, onClose }) {
         .s-bubble-ai { background: white; color: #1a201d; border-radius: 20px 20px 20px 0; max-width: 95%; padding: 22px; margin-bottom: 5px; line-height: 1.7; box-shadow: 0 10px 30px rgba(0,0,0,0.4); word-wrap: break-word; }
         .s-model-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; color: #a3b8a3; margin-bottom: 10px; display: block; opacity: 0.9; letter-spacing: 0.5px; }
         
-        /* SOURCE CARDS BANG SAN (Tetap Ada) */
+        /* SOURCE CARDS BANG SAN */
         .s-sources-grid { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; margin-bottom: 10px; }
         .s-source-card { background: #151a18; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 10px 15px; display: flex; align-items: center; gap: 12px; text-decoration: none; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .s-source-card:hover { background: #1a221f; border-color: #b8cbb8; transform: translateY(-2px); }
         .s-source-domain { font-size: 12px; font-weight: 600; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* SIMILAR QUESTIONS (Dikembalikan!) */
+        /* SIMILAR QUESTIONS */
         .s-similar-box { margin-top: 15px; margin-bottom: 25px; padding-left: 5px; }
         .s-similar-title { font-size: 10px; color: #8e9b95; font-weight: 800; margin-bottom: 10px; text-transform: uppercase; display: flex; align-items: center; gap: 5px; }
         .s-similar-item { padding: 12px 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; font-size: 13px; color: #b8cbb8; margin-bottom: 8px; cursor: pointer; transition: 0.2s; font-weight: 600; }
@@ -256,7 +252,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
         .s-submit-btn { width: 45px; height: 45px; border-radius: 50%; background: #b8cbb8; color: #000; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .s-submit-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-        /* MODEL SELECTOR ACCORDION */
+        /* MODEL SELECTOR */
         .s-model-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; position: relative; }
         .s-model-trigger { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #8e9b95; cursor: pointer; text-transform: uppercase; font-weight: 800; }
         .s-model-info-pop { position: absolute; bottom: 35px; left: 0; background: #1a221f; border: 1px solid #334155; padding: 15px; border-radius: 15px; width: 280px; z-index: 500; box-shadow: 0 10px 25px rgba(0,0,0,0.6); animation: smoothPop 0.2s ease-out; }
@@ -306,7 +302,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
       </aside>
 
       <main className="s-chat-area">
-        {/* WELCOME SCREEN (Hanya muncul kalau belum ada chat) */}
+        {/* WELCOME SCREEN & INFO MARKET WIDGET */}
         {messages.length === 0 && !isLoading && (
           <div className="s-welcome-container">
             <h2 className="s-welcome-title">Welcome Sir, <br/><span className="s-welcome-subtitle">User</span></h2>
@@ -322,10 +318,10 @@ export default function SanexusChat({ initialQuery, onClose }) {
                 <h3 className="s-big-card-title">Business</h3>
                 <p className="s-big-card-desc">Analyze market trends and business strategies.</p>
               </div>
-              <div className="s-big-card" onClick={() => performSearch("Buatkan kode React untuk pemula")}>
-                <Code size={24} className="s-big-card-icon" />
-                <h3 className="s-big-card-title">Coding</h3>
-                <p className="s-big-card-desc">Generate code snippets and debug issues.</p>
+              <div className="s-big-card" onClick={() => performSearch("Update harga sawit, IHSG, dan crypto hari ini")}>
+                <TrendingUp size={24} className="s-big-card-icon" />
+                <h3 className="s-big-card-title">Info Market</h3>
+                <p className="s-big-card-desc">Pantau harga sawit, IHSG, emas, dan crypto.</p>
               </div>
             </div>
           </div>
@@ -340,13 +336,14 @@ export default function SanexusChat({ initialQuery, onClose }) {
             {msg.role === 'user' ? (
               <div style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginBottom: '25px'}}>
                 <div className="s-bubble-user">
+                  {/* BUBBLE KARTU BERITA ANTI DOUBLE-TEXT */}
                   {msg.isNewsCard && (
                     <div style={{background: 'rgba(0,0,0,0.4)', padding: '10px', borderRadius: '12px', marginBottom: msg.content ? '10px' : '0'}}>
                       <img src={msg.newsData.image} alt="news" style={{width: '100%', height: '120px', objectFit: 'cover', borderRadius: '8px', marginBottom: '8px'}} />
                       <h4 style={{fontSize: '0.85rem', color: '#fff', margin: 0, lineHeight: '1.4'}}>{msg.newsData.title}</h4>
                     </div>
                   )}
-                  {msg.content}
+                  {msg.content && <span>{msg.content}</span>}
                 </div>
                 <div style={{display: 'flex', gap: '15px', marginRight: '5px', marginTop: '5px'}}>
                    <button className="s-action-icon" onClick={() => handleEdit(msg.content)} title="Edit"><Edit2 size={14}/></button>
@@ -466,7 +463,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
           <input 
             value={inputValue} 
             onChange={(e) => setInputValue(e.target.value)} 
-            placeholder={isLoading ? "Mohon tunggu sebentar..." : "Tanya atau cari berita..."} 
+            placeholder={isLoading ? "Mohon tunggu sebentar..." : "Tanya atau cari info market..."} 
             disabled={false} 
             required={!pendingNews}
           />
