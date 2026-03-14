@@ -11,8 +11,8 @@ const WhatsAppIcon = ({ size = 20, className = "" }) => (
 );
 
 export default function App() {
-  // LOGIKA ROUTER SEDERHANA (GATE)
-  const [viewMode, setViewMode] = useState("gate"); // 'gate', 'news', 'ai'
+  // DEFAULT LANGSUNG KE NEWS, TAPI BISA PINDAH KE AI KALAU ADA LINK
+  const [viewMode, setViewMode] = useState("news"); 
 
   const [news, setNews] = useState([]);
   const [filteredNews, setFilteredNews] = useState([]);
@@ -26,7 +26,7 @@ export default function App() {
   const megaFilters = [
     { label: "Politik", icon: <Megaphone size={14}/>, query: "Cari berita politik dan kebijakan terbaru di Indonesia" },
     { label: "Ekonomi", icon: <TrendingUp size={14}/>, query: "Cari update ekonomi, bursa saham, dan harga sawit hari ini" },
-    { label: "Hukum", icon: <Scale size={14}/>, query: "Cari berita kasus hukum dan regulasi terbaru" }, // TITIK DUA UDAH DIBENERIN DI SINI
+    { label: "Hukum", icon: <Scale size={14}/>, query: "Cari berita kasus hukum dan regulasi terbaru" }, 
     { label: "Kriminal", icon: <ShieldAlert size={14}/>, query: "Cari update kriminalitas dan keamanan nasional" },
     { label: "Kesehatan", icon: <HeartPulse size={14}/>, query: "Cari info kesehatan, medis, dan BPJS terbaru" },
     { label: "Teknologi", icon: <Cpu size={14}/>, query: "Cari tren AI, gadget, dan software terbaru" },
@@ -34,12 +34,11 @@ export default function App() {
 
   const sources = ["Semua", "CNBC", "CNN", "Kompas", "Sindo", "Suara"];
 
-  // CEK URL PARAMETER UNTUK DIRECT LINK
+  // CEK URL PARAMETER DARI LANDING PAGE EXTERNAL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const page = params.get('page');
     if (page === 'ai') setViewMode('ai');
-    else if (page === 'news') setViewMode('news');
   }, []);
 
   useEffect(() => {
@@ -93,59 +92,18 @@ export default function App() {
   };
 
   // ==========================================
-  // VIEW 1: LANDING GATE
-  // ==========================================
-  if (viewMode === 'gate') {
-    return (
-      <div className="min-h-screen font-sans text-white bg-[#050705] flex items-center justify-center relative overflow-hidden p-6">
-        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px] animate-pulse"></div>
-        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-[#b8cbb8]/10 rounded-full blur-[120px] animate-pulse" style={{animationDelay: '2s'}}></div>
-
-        <div className="max-w-4xl w-full z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
-          <div className="text-center mb-16">
-            <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter mb-4 flex justify-center items-center gap-2">
-              Indo<span className="text-green-500">Sawi</span>
-              <img src="https://j.top4top.io/p_37192jn0n0.png" alt="logo" className="w-10 h-10 -ml-1 animate-bounce" style={{animationDuration: '3s'}} />
-              <span className="text-gray-300">Nexus</span>
-            </h1>
-            <p className="text-gray-400 font-mono text-sm tracking-widest uppercase">Pilih Portal Akses Anda</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div onClick={() => { setViewMode('news'); window.history.pushState({}, '', '?page=news'); }} className="group cursor-pointer bg-white/[0.03] backdrop-blur-xl border border-white/10 p-12 rounded-[40px] hover:border-blue-500/50 hover:bg-white/[0.05] hover:shadow-[0_20px_50px_rgba(59,130,246,0.1)] transition-all duration-500 flex flex-col items-center text-center">
-              <div className="w-24 h-24 bg-blue-500/10 border border-blue-500/20 rounded-full flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-blue-500/20 transition-all">
-                <Globe size={40} className="text-blue-400" />
-              </div>
-              <h2 className="text-2xl font-black mb-4 tracking-wide">Portal Berita</h2>
-              <p className="text-gray-400 text-sm leading-relaxed">Akses portal berita nasional dan pantau pergerakan pasar kelapa sawit terkini.</p>
-            </div>
-
-            <div onClick={() => { setViewMode('ai'); window.history.pushState({}, '', '?page=ai'); }} className="group cursor-pointer bg-white/[0.03] backdrop-blur-xl border border-white/10 p-12 rounded-[40px] hover:border-[#b8cbb8]/50 hover:bg-white/[0.05] hover:shadow-[0_20px_50px_rgba(184,203,184,0.1)] transition-all duration-500 flex flex-col items-center text-center">
-              <div className="w-24 h-24 bg-[#b8cbb8]/10 border border-[#b8cbb8]/20 rounded-full flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-[#b8cbb8]/20 transition-all">
-                <Sparkles size={40} className="text-[#b8cbb8]" />
-              </div>
-              <h2 className="text-2xl font-black mb-4 tracking-wide">Sanexus AI</h2>
-              <p className="text-gray-400 text-sm leading-relaxed">Asisten kecerdasan buatan untuk riset mendalam dan pencarian data real-time.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ==========================================
-  // VIEW 2: SANEXUS AI DIRECT LINK
+  // VIEW: SANEXUS AI DIRECT LINK
   // ==========================================
   if (viewMode === 'ai') {
     return (
       <div className="w-full h-screen bg-[#050705]">
-        <SanexusChat initialQuery="" onClose={() => { setViewMode('gate'); window.history.pushState({}, '', '/'); }} />
+        <SanexusChat initialQuery="" onClose={() => { setViewMode('news'); window.history.pushState({}, '', '/'); }} />
       </div>
     );
   }
 
   // ==========================================
-  // VIEW 3: INDOSAWIT NEWS PORTAL (ASLI)
+  // VIEW: INDOSAWIT NEWS PORTAL (ASLI)
   // ==========================================
   return (
     <div className="min-h-screen font-sans text-white bg-[#050705]">
@@ -158,7 +116,7 @@ export default function App() {
       {/* Header IndoSawit */}
       <header className="sticky top-4 z-40 mx-4 md:mx-8 mb-8">
         <nav className="p-5 rounded-[28px] flex justify-between items-center bg-white/[0.03] backdrop-blur-xl border border-white/5 shadow-2xl relative">
-          <div className="flex flex-col cursor-pointer" onClick={() => { setViewMode('gate'); window.history.pushState({}, '', '/'); }}>
+          <div className="flex flex-col cursor-pointer" onClick={() => { setViewMode('news'); window.history.pushState({}, '', '/'); }}>
             <h1 className="text-2xl md:text-3xl font-black italic tracking-tighter flex items-center gap-1 group">
               <span className="text-white group-hover:text-blue-400 transition-colors">Indo</span>
               <span className="text-green-500 drop-shadow-[0_0_5px_rgba(34,197,94,0.4)]">Sawi</span>
