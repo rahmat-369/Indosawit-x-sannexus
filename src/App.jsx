@@ -26,7 +26,7 @@ export default function App() {
   const megaFilters = [
     { label: "Politik", icon: <Megaphone size={14}/>, query: "Cari berita politik dan kebijakan terbaru di Indonesia" },
     { label: "Ekonomi", icon: <TrendingUp size={14}/>, query: "Cari update ekonomi, bursa saham, dan harga sawit hari ini" },
-    { label: "Hukum", icon <Scale size={14}/>, query: "Cari berita kasus hukum dan regulasi terbaru" },
+    { label: "Hukum", icon: <Scale size={14}/>, query: "Cari berita kasus hukum dan regulasi terbaru" }, // TITIK DUA UDAH DIBENERIN DI SINI
     { label: "Kriminal", icon: <ShieldAlert size={14}/>, query: "Cari update kriminalitas dan keamanan nasional" },
     { label: "Kesehatan", icon: <HeartPulse size={14}/>, query: "Cari info kesehatan, medis, dan BPJS terbaru" },
     { label: "Teknologi", icon: <Cpu size={14}/>, query: "Cari tren AI, gadget, dan software terbaru" },
@@ -272,15 +272,15 @@ export default function App() {
               <div className="flex gap-3 mb-4">
                 <a href="https://github.com/rahmat-369" target="_blank" rel="noreferrer" className="p-2 bg-white/5 rounded-xl hover:text-white text-gray-400"><Github size={16}/></a>
                 <a href="https://t.me/rAi_engine" target="_blank" rel="noreferrer" className="p-2 bg-white/5 rounded-xl hover:text-blue-400 text-gray-400"><Send size={16}/></a>
-                <a href="https://www.instagram.com/rahmt_nhw" target="_blank" rel="noreferrer" className="p-2 bg-white/5 rounded-xl hover:text-pink-500 text-gray-400"><Instagram size={16}/></a>
-                <a href="https://www.tiktok.com/@r_hmtofc" target="_blank" rel="noreferrer" className="p-2 bg-white/5 rounded-xl hover:text-white text-gray-400"><TikTokIcon size={16} /></a>
+                <a href="https://www.instagram.com/rahmt_nhw?igsh=MWQwcnB3bTA2ZnVidg==" target="_blank" rel="noreferrer" className="p-2 bg-white/5 rounded-xl hover:text-pink-500 text-gray-400"><Instagram size={16}/></a>
+                <a href="https://www.tiktok.com/@r_hmtofc?_r=1&_t=ZS-94KRfWQjeUu" target="_blank" rel="noreferrer" className="p-2 bg-white/5 rounded-xl hover:text-white text-gray-400"><TikTokIcon size={16} /></a>
               </div>
               <a href="https://whatsapp.com/channel/0029VbBjyjlJ93wa6hwSWa0p" target="_blank" rel="noreferrer" className="flex items-center gap-2 bg-[#25D366]/10 px-4 py-2 rounded-full text-[10px] font-bold text-[#25D366] border border-[#25D366]/20 hover:bg-[#25D366]/20">
                 <WhatsAppIcon size={14} /> [𝙍]𝙝𝙢𝙏 | 𝘾𝙤𝙙𝙚⚙️𝘼𝙄 𝙡
               </a>
             </div>
 
-            {/* 🔥 UPDATE PROFIL SANN404 (Master Coder + WA Icons) 🔥 */}
+            {/* 🔥 UPDATE PROFIL SANN404 🔥 */}
             <div className="flex flex-col items-center bg-white/[0.02] border border-white/5 p-6 rounded-3xl hover:border-[#b8cbb8]/30 transition-colors">
               <img src="https://e.top4top.io/p_3721610g20.jpg" alt="San" className="w-20 h-20 rounded-full border-2 border-[#b8cbb8]/30 object-cover mb-4" />
               <h3 className="text-lg font-black text-white">SANN404</h3>
