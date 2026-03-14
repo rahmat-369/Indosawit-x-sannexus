@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Menu, X, Filter, ExternalLink, Github, Send, Instagram, CheckCircle2, ChevronUp, MessageCircle, Sparkles } from "lucide-react";
+import { Menu, X, Filter, ExternalLink, Github, Send, Instagram, CheckCircle2, ChevronUp, MessageCircle, Sparkles, Megaphone, TrendingUp, Scale, ShieldAlert, HeartPulse, Cpu, Globe, Palette, GraduationCap } from "lucide-react";
 import SanexusChat from "./components/SanexusChat";
 
 // Custom Icons
@@ -11,17 +11,43 @@ const WhatsAppIcon = ({ size = 20, className = "" }) => (
 );
 
 export default function App() {
+  // LOGIKA ROUTER SEDERHANA (GATE)
+  const [viewMode, setViewMode] = useState("gate"); // 'gate', 'news', 'ai'
+
   const [news, setNews] = useState([]);
   const [filteredNews, setFilteredNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("Semua");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showTopBtn, setShowTopBtn] = useState(false);
-  
-  // State untuk Integrasi Sanexus (Sekarang bisa menerima Object Berita)
   const [activeSanexusQuery, setActiveSanexusQuery] = useState(null);
+  const [greeting, setGreeting] = useState("");
+
+  const megaFilters = [
+    { label: "Politik", icon: <Megaphone size={14}/>, query: "Cari berita politik dan kebijakan terbaru di Indonesia" },
+    { label: "Ekonomi", icon: <TrendingUp size={14}/>, query: "Cari update ekonomi, bursa saham, dan harga sawit hari ini" },
+    { label: "Hukum", icon <Scale size={14}/>, query: "Cari berita kasus hukum dan regulasi terbaru" },
+    { label: "Kriminal", icon: <ShieldAlert size={14}/>, query: "Cari update kriminalitas dan keamanan nasional" },
+    { label: "Kesehatan", icon: <HeartPulse size={14}/>, query: "Cari info kesehatan, medis, dan BPJS terbaru" },
+    { label: "Teknologi", icon: <Cpu size={14}/>, query: "Cari tren AI, gadget, dan software terbaru" },
+  ];
+
+  const sources = ["Semua", "CNBC", "CNN", "Kompas", "Sindo", "Suara"];
+
+  // CEK URL PARAMETER UNTUK DIRECT LINK
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const page = params.get('page');
+    if (page === 'ai') setViewMode('ai');
+    else if (page === 'news') setViewMode('news');
+  }, []);
 
   useEffect(() => {
+    const hours = new Date().getHours();
+    if (hours < 12) setGreeting("Selamat Pagi, Sir");
+    else if (hours < 17) setGreeting("Selamat Siang, Sir");
+    else setGreeting("Selamat Malam, Sir");
+
     const handleScroll = () => setShowTopBtn(window.scrollY > 400);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -66,29 +92,84 @@ export default function App() {
     setFilteredNews(source === "Semua" ? news : news.filter(item => item.source === source));
   };
 
+  // ==========================================
+  // VIEW 1: LANDING GATE
+  // ==========================================
+  if (viewMode === 'gate') {
+    return (
+      <div className="min-h-screen font-sans text-white bg-[#050705] flex items-center justify-center relative overflow-hidden p-6">
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px] animate-pulse"></div>
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-[#b8cbb8]/10 rounded-full blur-[120px] animate-pulse" style={{animationDelay: '2s'}}></div>
+
+        <div className="max-w-4xl w-full z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
+          <div className="text-center mb-16">
+            <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter mb-4 flex justify-center items-center gap-2">
+              Indo<span className="text-green-500">Sawi</span>
+              <img src="https://j.top4top.io/p_37192jn0n0.png" alt="logo" className="w-10 h-10 -ml-1 animate-bounce" style={{animationDuration: '3s'}} />
+              <span className="text-gray-300">Nexus</span>
+            </h1>
+            <p className="text-gray-400 font-mono text-sm tracking-widest uppercase">Pilih Portal Akses Anda</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div onClick={() => { setViewMode('news'); window.history.pushState({}, '', '?page=news'); }} className="group cursor-pointer bg-white/[0.03] backdrop-blur-xl border border-white/10 p-12 rounded-[40px] hover:border-blue-500/50 hover:bg-white/[0.05] hover:shadow-[0_20px_50px_rgba(59,130,246,0.1)] transition-all duration-500 flex flex-col items-center text-center">
+              <div className="w-24 h-24 bg-blue-500/10 border border-blue-500/20 rounded-full flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-blue-500/20 transition-all">
+                <Globe size={40} className="text-blue-400" />
+              </div>
+              <h2 className="text-2xl font-black mb-4 tracking-wide">Portal Berita</h2>
+              <p className="text-gray-400 text-sm leading-relaxed">Akses portal berita nasional dan pantau pergerakan pasar kelapa sawit terkini.</p>
+            </div>
+
+            <div onClick={() => { setViewMode('ai'); window.history.pushState({}, '', '?page=ai'); }} className="group cursor-pointer bg-white/[0.03] backdrop-blur-xl border border-white/10 p-12 rounded-[40px] hover:border-[#b8cbb8]/50 hover:bg-white/[0.05] hover:shadow-[0_20px_50px_rgba(184,203,184,0.1)] transition-all duration-500 flex flex-col items-center text-center">
+              <div className="w-24 h-24 bg-[#b8cbb8]/10 border border-[#b8cbb8]/20 rounded-full flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-[#b8cbb8]/20 transition-all">
+                <Sparkles size={40} className="text-[#b8cbb8]" />
+              </div>
+              <h2 className="text-2xl font-black mb-4 tracking-wide">Sanexus AI</h2>
+              <p className="text-gray-400 text-sm leading-relaxed">Asisten kecerdasan buatan untuk riset mendalam dan pencarian data real-time.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // VIEW 2: SANEXUS AI DIRECT LINK
+  // ==========================================
+  if (viewMode === 'ai') {
+    return (
+      <div className="w-full h-screen bg-[#050705]">
+        <SanexusChat initialQuery="" onClose={() => { setViewMode('gate'); window.history.pushState({}, '', '/'); }} />
+      </div>
+    );
+  }
+
+  // ==========================================
+  // VIEW 3: INDOSAWIT NEWS PORTAL (ASLI)
+  // ==========================================
   return (
     <div className="min-h-screen font-sans text-white bg-[#050705]">
       
-      {/* OVERLAY SANEXUS AI */}
+      {/* OVERLAY SANEXUS AI DARI PORTAL BERITA */}
       {activeSanexusQuery !== null && (
-        <SanexusChat 
-          initialQuery={activeSanexusQuery} 
-          onClose={() => setActiveSanexusQuery(null)} 
-        />
+        <SanexusChat initialQuery={activeSanexusQuery} onClose={() => setActiveSanexusQuery(null)} />
       )}
 
       {/* Header IndoSawit */}
       <header className="sticky top-4 z-40 mx-4 md:mx-8 mb-8">
         <nav className="p-5 rounded-[28px] flex justify-between items-center bg-white/[0.03] backdrop-blur-xl border border-white/5 shadow-2xl relative">
-          <h1 className="text-2xl md:text-3xl font-black italic tracking-tighter flex items-center gap-1">
-            <span className="text-white">Indo</span>
-            <span className="text-green-500 drop-shadow-[0_0_5px_rgba(34,197,94,0.4)]">Sawi</span>
-            <div className="relative w-8 h-8 -ml-1">
-              <div className="absolute inset-0 bg-orange-500/30 blur-[6px] rounded-full animate-pulse"></div>
-              <img src="https://j.top4top.io/p_37192jn0n0.png" alt="logo" className="relative z-10 w-full h-full object-contain" />
-            </div>
-            <span className="text-gray-300 drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]">.news</span>
-          </h1>
+          <div className="flex flex-col cursor-pointer" onClick={() => { setViewMode('gate'); window.history.pushState({}, '', '/'); }}>
+            <h1 className="text-2xl md:text-3xl font-black italic tracking-tighter flex items-center gap-1 group">
+              <span className="text-white group-hover:text-blue-400 transition-colors">Indo</span>
+              <span className="text-green-500 drop-shadow-[0_0_5px_rgba(34,197,94,0.4)]">Sawi</span>
+              <div className="relative w-8 h-8 -ml-1">
+                <div className="absolute inset-0 bg-orange-500/30 blur-[6px] rounded-full animate-pulse"></div>
+                <img src="https://j.top4top.io/p_37192jn0n0.png" alt="logo" className="relative z-10 w-full h-full object-contain" />
+              </div>
+              <span className="text-gray-300 drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]">.news</span>
+            </h1>
+            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">{greeting}</p>
+          </div>
           <div className="flex items-center gap-3">
             <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-full text-[10px] font-bold text-green-400 uppercase tracking-widest">
                <CheckCircle2 size={14}/> Server Optimal
@@ -99,37 +180,37 @@ export default function App() {
           </div>
         </nav>
 
-        {/* Hamburger Menu Mobile */}
         {isMenuOpen && (
           <div className="absolute top-[110%] left-0 w-full glass-card rounded-3xl p-6 animate-in slide-in-from-top duration-300 border border-white/5 bg-white/[0.02] backdrop-blur-xl shadow-2xl">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-[10px] text-blue-400 font-bold uppercase tracking-widest">Status Sistem</h3>
               <span className="flex items-center gap-1 text-[9px] font-bold text-green-400 bg-green-400/10 px-2 py-1 rounded-full"><CheckCircle2 size={10}/> Link Aktif</span>
             </div>
-            
             <div className="grid grid-cols-2 gap-3 mb-3">
-              <button 
-                onClick={() => { setIsMenuOpen(false); setActiveSanexusQuery(""); }} 
-                className="col-span-2 p-4 bg-gradient-to-r from-[#0d1110] to-[#1a201d] border border-[#b8cbb8]/30 rounded-2xl text-xs font-bold text-[#b8cbb8] flex items-center justify-center gap-2 shadow-[0_4px_15px_rgba(184,203,184,0.1)] hover:border-[#b8cbb8] transition-all"
-              >
-                <Sparkles size={16} /> Akses Cepat Sanexus AI
+              <button onClick={() => { setIsMenuOpen(false); setViewMode('ai'); window.history.pushState({}, '', '?page=ai'); }} className="col-span-2 p-4 bg-gradient-to-r from-[#0d1110] to-[#1a201d] border border-[#b8cbb8]/30 rounded-2xl text-xs font-bold text-[#b8cbb8] flex items-center justify-center gap-2 shadow-[0_4px_15px_rgba(184,203,184,0.1)] hover:border-[#b8cbb8] transition-all">
+                <Sparkles size={16} /> Buka Full Sanexus AI
               </button>
-
-              <button onClick={() => { setIsMenuOpen(false); window.scrollTo({top: 0, behavior: 'smooth'}); }} className="p-3 bg-white/5 rounded-2xl text-[11px] font-bold border border-white/5 text-center text-gray-300 hover:bg-white/10 transition-colors">
-                Berita Terbaru
-              </button>
-              <button onClick={() => { setIsMenuOpen(false); window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'}); }} className="p-3 bg-white/5 rounded-2xl text-[11px] font-bold border border-white/5 text-center text-gray-300 hover:bg-white/10 transition-colors">
-                Kontak Developer
-              </button>
+              <button onClick={() => { setIsMenuOpen(false); window.scrollTo({top: 0, behavior: 'smooth'}); }} className="p-3 bg-white/5 rounded-2xl text-[11px] font-bold border border-white/5 text-center text-gray-300 hover:bg-white/10 transition-colors">Berita Terbaru</button>
+              <button onClick={() => { setIsMenuOpen(false); window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'}); }} className="p-3 bg-white/5 rounded-2xl text-[11px] font-bold border border-white/5 text-center text-gray-300 hover:bg-white/10 transition-colors">Kontak Developer</button>
             </div>
           </div>
         )}
       </header>
 
-      {/* Filter Bar */}
+      {/* FILTER BAR BERITA */}
       <div className="flex gap-2 overflow-x-auto px-4 md:px-8 pb-6 no-scrollbar mb-4 items-center">
         <Filter size={16} className="text-gray-500 shrink-0"/>
-        {["Semua", "CNBC", "CNN", "Kompas", "Sindo", "Suara"].map((source) => (
+        
+        {megaFilters.map((pill, idx) => (
+          <button key={idx} onClick={() => setActiveSanexusQuery(pill.query)}
+            className="px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-[#b8cbb8]/10 border border-[#b8cbb8]/20 text-[#b8cbb8] flex items-center gap-2 shrink-0 hover:bg-[#b8cbb8] hover:text-[#050705] transition-all duration-300">
+            {pill.icon} {pill.label}
+          </button>
+        ))}
+
+        <div className="w-[1px] h-8 bg-white/10 mx-2 shrink-0"></div>
+
+        {sources.map((source) => (
           <button key={source} onClick={() => handleFilter(source)}
             className={`px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shrink-0 border ${
               activeFilter === source ? "bg-blue-500/10 border-blue-400 text-blue-400" : "bg-white/5 border-white/5 text-gray-400"
@@ -139,7 +220,7 @@ export default function App() {
         ))}
       </div>
 
-      {/* Grid Berita */}
+      {/* GRID BERITA */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-20">
         {loading ? (
           Array(6).fill(0).map((_, i) => <div key={i} className="h-72 bg-white/[0.02] border border-white/5 rounded-[32px] animate-pulse"></div>)
@@ -164,14 +245,8 @@ export default function App() {
                   BACA FULL <ExternalLink size={10}/>
                 </a>
                 
-                {/* TOMBOL AI (Sekarang ngirim Object Paket Lengkap) */}
                 <button 
-                  onClick={() => setActiveSanexusQuery({
-                    type: 'news',
-                    title: item.title,
-                    link: item.link,
-                    image: item.image
-                  })} 
+                  onClick={() => setActiveSanexusQuery({ type: 'news', title: item.title, link: item.link, image: item.image })} 
                   className="text-[10px] px-4 py-2 rounded-full border border-[#b8cbb8]/30 bg-[#b8cbb8]/10 text-[#b8cbb8] hover:bg-[#b8cbb8]/20 transition-all font-bold flex items-center gap-1">
                   <Sparkles size={12} /> Tanya Sanexus
                 </button>
@@ -197,15 +272,15 @@ export default function App() {
               <div className="flex gap-3 mb-4">
                 <a href="https://github.com/rahmat-369" target="_blank" rel="noreferrer" className="p-2 bg-white/5 rounded-xl hover:text-white text-gray-400"><Github size={16}/></a>
                 <a href="https://t.me/rAi_engine" target="_blank" rel="noreferrer" className="p-2 bg-white/5 rounded-xl hover:text-blue-400 text-gray-400"><Send size={16}/></a>
-                <a href="https://www.instagram.com/rahmt_nhw?igsh=MWQwcnB3bTA2ZnVidg==" target="_blank" rel="noreferrer" className="p-2 bg-white/5 rounded-xl hover:text-pink-500 text-gray-400"><Instagram size={16}/></a>
-                <a href="https://www.tiktok.com/@r_hmtofc?_r=1&_t=ZS-94KRfWQjeUu" target="_blank" rel="noreferrer" className="p-2 bg-white/5 rounded-xl hover:text-white text-gray-400"><TikTokIcon size={16} /></a>
+                <a href="https://www.instagram.com/rahmt_nhw" target="_blank" rel="noreferrer" className="p-2 bg-white/5 rounded-xl hover:text-pink-500 text-gray-400"><Instagram size={16}/></a>
+                <a href="https://www.tiktok.com/@r_hmtofc" target="_blank" rel="noreferrer" className="p-2 bg-white/5 rounded-xl hover:text-white text-gray-400"><TikTokIcon size={16} /></a>
               </div>
               <a href="https://whatsapp.com/channel/0029VbBjyjlJ93wa6hwSWa0p" target="_blank" rel="noreferrer" className="flex items-center gap-2 bg-[#25D366]/10 px-4 py-2 rounded-full text-[10px] font-bold text-[#25D366] border border-[#25D366]/20 hover:bg-[#25D366]/20">
                 <WhatsAppIcon size={14} /> [𝙍]𝙝𝙢𝙏 | 𝘾𝙤𝙙𝙚⚙️𝘼𝙄 𝙡
               </a>
             </div>
 
-            {/* 🔥 UPDATE PROFIL SANN404 🔥 */}
+            {/* 🔥 UPDATE PROFIL SANN404 (Master Coder + WA Icons) 🔥 */}
             <div className="flex flex-col items-center bg-white/[0.02] border border-white/5 p-6 rounded-3xl hover:border-[#b8cbb8]/30 transition-colors">
               <img src="https://e.top4top.io/p_3721610g20.jpg" alt="San" className="w-20 h-20 rounded-full border-2 border-[#b8cbb8]/30 object-cover mb-4" />
               <h3 className="text-lg font-black text-white">SANN404</h3>
@@ -219,7 +294,6 @@ export default function App() {
                 <WhatsAppIcon size={14} /> SANN404 FORUM | GROUP
               </a>
             </div>
-            {/* 🔥 END UPDATE PROFIL SANN404 🔥 */}
 
           </div>
 
