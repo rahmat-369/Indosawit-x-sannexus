@@ -298,20 +298,22 @@ export default function SanexusChat({ initialQuery, onClose }) {
                </div>
              ))}
            </div>
-           {sessions.length > 0 && <button onClick={clearAllHistory} style={{padding: '12px', background: 'rgba(255,0,0,0.1)', border: '1px solid rgba(255,0,0,0.2)', borderRadius: '12px', color: '#ff6b6b', fontWeight: 'bold', marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer'}}><Trash2 size={16}/> Bersihkan Semua</button>}
            
-           {/* MINI PROFILE IS BACK */}
+           {/* UPDATE: Tombol hapus dikecilin padding-nya (8px) dan dikasih margin bawah 25px biar nggak dempet profil */}
+           {sessions.length > 0 && <button onClick={clearAllHistory} style={{padding: '8px', background: 'rgba(255,0,0,0.1)', border: '1px solid rgba(255,0,0,0.2)', borderRadius: '12px', color: '#ff6b6b', fontWeight: 'bold', marginTop: '10px', marginBottom: '25px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer'}}><Trash2 size={16}/> Bersihkan Semua</button>}
+           
+           {/* UPDATE: Jabatan diganti jadi Master Coder */}
            <div className="s-mini-profile" onClick={() => { setIsSidebarOpen(false); setShowFullProfile(true); }}>
              <img src="https://e.top4top.io/p_3721610g20.jpg" alt="SANN404" />
              <div className="s-mini-profile-info">
                <h4>SANN404</h4>
-               <p>Developer Info</p>
+               <p>Master Coder</p>
              </div>
            </div>
         </div>
       </aside>
 
-      {/* FULL PROFILE OVERLAY IS BACK */}
+      {/* FULL PROFILE OVERLAY */}
       {showFullProfile && (
         <div className="s-full-profile-overlay">
           <button className="s-close-full-profile" onClick={() => setShowFullProfile(false)}>
@@ -323,11 +325,15 @@ export default function SanexusChat({ initialQuery, onClose }) {
           <img src="https://e.top4top.io/p_3721610g20.jpg" alt="SANN404" style={{width: '120px', height: '120px', borderRadius: '50%', border: '3px solid #b8cbb8', objectFit: 'cover', marginBottom: '20px'}} />
           <h1 style={{fontFamily: "'Playfair Display', serif", fontSize: '2.5rem', color: '#b8cbb8', marginBottom: '5px'}}>SANEXUSAI</h1>
           <h3 style={{fontSize: '1.5rem', color: '#ffffff', marginBottom: '20px', letterSpacing: '2px'}}>SANN404</h3>
-          <p style={{fontSize: '0.9rem', color: '#8e9b95', marginBottom: '30px', maxWidth: '300px', lineHeight: '1.6'}}>Node.js Expert & AI Engine Developer.</p>
+          
+          {/* UPDATE: Jabatan diganti jadi Node.js Expert & Master Coder */}
+          <p style={{fontSize: '0.9rem', color: '#8e9b95', marginBottom: '30px', maxWidth: '300px', lineHeight: '1.6'}}>Node.js Expert & Master Coder</p>
+          
+          {/* UPDATE: Semua ikon diganti jadi WhatsApp */}
           <div style={{display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '30px'}}>
-            <a href="#" style={{background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '15px', color: '#fff'}}><Instagram size={20}/></a>
-            <a href="#" style={{background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '15px', color: '#fff'}}><Send size={20}/></a>
-            <a href="#" style={{background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '15px', color: '#fff'}}><TikTokIcon size={20}/></a>
+            <a href="#" style={{background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '15px', color: '#fff'}}><WhatsAppIcon size={20}/></a>
+            <a href="#" style={{background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '15px', color: '#fff'}}><WhatsAppIcon size={20}/></a>
+            <a href="#" style={{background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '15px', color: '#fff'}}><WhatsAppIcon size={20}/></a>
           </div>
           <a href="https://whatsapp.com/channel/0029Vb6ukqnHQbS4mKP0j80L" target="_blank" rel="noreferrer" style={{display: 'flex', alignItems: 'center', gap: '10px', background: 'white', color: '#000', padding: '15px 30px', borderRadius: '50px', textDecoration: 'none', fontWeight: 'bold'}}>
             <WhatsAppIcon size={20}/> JOIN SALURAN SANN404
