@@ -1,19 +1,16 @@
 import { useEffect, useState } from "react";
-import { Menu, X, Filter, ExternalLink, Github, Send, Instagram, CheckCircle2, ChevronUp, MessageCircle, Sparkles, Megaphone, TrendingUp, Scale, ShieldAlert, HeartPulse, Cpu, Globe, Palette, GraduationCap } from "lucide-react";
+import { Menu, X, Filter, ExternalLink, Github, Send, Instagram, CheckCircle2, ChevronUp, MessageCircle, Sparkles, Megaphone, TrendingUp, Scale, ShieldAlert, HeartPulse, Cpu, Globe, Palette, GraduationCap, Smartphone, Share, MoreVertical } from "lucide-react";
 import SanexusChat from "./components/SanexusChat";
 
-// Custom Icons
 const TikTokIcon = ({ size = 20, className = "" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
 );
 const WhatsAppIcon = ({ size = 20, className = "" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
 );
 
 export default function App() {
-  // DEFAULT LANGSUNG KE NEWS, TAPI BISA PINDAH KE AI KALAU ADA LINK
   const [viewMode, setViewMode] = useState("news"); 
-
   const [news, setNews] = useState([]);
   const [filteredNews, setFilteredNews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,6 +19,7 @@ export default function App() {
   const [showTopBtn, setShowTopBtn] = useState(false);
   const [activeSanexusQuery, setActiveSanexusQuery] = useState(null);
   const [greeting, setGreeting] = useState("");
+  const [showInstallPopup, setShowInstallPopup] = useState(false);
 
   const megaFilters = [
     { label: "Politik", icon: <Megaphone size={14}/>, query: "Cari berita politik dan kebijakan terbaru di Indonesia" },
@@ -34,14 +32,22 @@ export default function App() {
 
   const sources = ["Semua", "CNBC", "CNN", "Kompas", "Sindo", "Suara"];
 
-  // CEK URL PARAMETER DARI LANDING PAGE EXTERNAL
+  useEffect(() => {
+    // 🔥 POPUP BERANDA LOGIC (Cuma di HP) 🔥
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const hasSeenPopup = localStorage.getItem("hasSeenInstallPopup");
+    
+    if (isMobile && !hasSeenPopup) {
+      const timer = setTimeout(() => setShowInstallPopup(true), 8000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const page = params.get('page');
     if (page === 'ai') setViewMode('ai');
-  }, []);
-
-  useEffect(() => {
+    
     const hours = new Date().getHours();
     if (hours < 12) setGreeting("Selamat Pagi, Sir");
     else if (hours < 17) setGreeting("Selamat Siang, Sir");
@@ -52,7 +58,10 @@ export default function App() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+  const closeInstallPopup = () => {
+    setShowInstallPopup(false);
+    localStorage.setItem("hasSeenInstallPopup", "true");
+  };
 
   const fetchNews = async () => {
     const APIS = [
@@ -91,9 +100,6 @@ export default function App() {
     setFilteredNews(source === "Semua" ? news : news.filter(item => item.source === source));
   };
 
-  // ==========================================
-  // VIEW: SANEXUS AI DIRECT LINK
-  // ==========================================
   if (viewMode === 'ai') {
     return (
       <div className="w-full h-screen bg-[#050705]">
@@ -102,18 +108,38 @@ export default function App() {
     );
   }
 
-  // ==========================================
-  // VIEW: INDOSAWIT NEWS PORTAL (ASLI)
-  // ==========================================
   return (
     <div className="min-h-screen font-sans text-white bg-[#050705]">
       
-      {/* OVERLAY SANEXUS AI DARI PORTAL BERITA */}
+      {/* MODAL POPUP TAMBAH KE BERANDA - TANPA ICON DI DALAMNYA */}
+      {showInstallPopup && (
+        <div className="fixed bottom-6 left-4 right-4 z-[9999] animate-in fade-in slide-in-from-bottom-10">
+          <div className="bg-[#1a201d] border border-[#b8cbb8]/30 rounded-3xl p-6 shadow-2xl backdrop-blur-xl relative">
+            <button onClick={closeInstallPopup} className="absolute top-4 right-4 text-gray-500 hover:text-white"><X size={20}/></button>
+            
+            <div className="mb-4">
+              <h4 className="font-black text-sm text-[#b8cbb8]">Jadikan Web App</h4>
+              <p className="text-[10px] text-gray-400">Akses IndoSawit lebih cepat dari layar utama.</p>
+            </div>
+
+            <div className="bg-white/5 rounded-2xl p-4 text-[11px] text-gray-300 space-y-3 leading-relaxed border border-white/5">
+              <p className="flex items-center gap-2 italic"><Smartphone size={14} className="text-blue-400"/> Gunakan browser HP untuk hasil terbaik.</p>
+              <p className="flex items-center gap-2 underline underline-offset-4 decoration-blue-500/50">
+                <MoreVertical size={14} className="text-blue-400"/> Android: Klik titik tiga (⋮) & pilih 'Tambah ke layar utama'.
+              </p>
+              <p className="flex items-center gap-2 underline underline-offset-4 decoration-pink-500/50">
+                <Share size={14} className="text-pink-400"/> iOS: Klik ikon Share & pilih 'Add to Home Screen'.
+              </p>
+            </div>
+            <button onClick={closeInstallPopup} className="w-full mt-4 py-3 bg-[#b8cbb8] text-[#050705] rounded-xl text-[11px] font-black uppercase tracking-widest">Siap, Mengerti Sir!</button>
+          </div>
+        </div>
+      )}
+
       {activeSanexusQuery !== null && (
         <SanexusChat initialQuery={activeSanexusQuery} onClose={() => setActiveSanexusQuery(null)} />
       )}
 
-      {/* Header IndoSawit */}
       <header className="sticky top-4 z-40 mx-4 md:mx-8 mb-8">
         <nav className="p-5 rounded-[28px] flex justify-between items-center bg-white/[0.03] backdrop-blur-xl border border-white/5 shadow-2xl relative">
           <div className="flex flex-col cursor-pointer" onClick={() => { setViewMode('news'); window.history.pushState({}, '', '/'); }}>
@@ -155,7 +181,6 @@ export default function App() {
         )}
       </header>
 
-      {/* FILTER BAR BERITA */}
       <div className="flex gap-2 overflow-x-auto px-4 md:px-8 pb-6 no-scrollbar mb-4 items-center">
         <Filter size={16} className="text-gray-500 shrink-0"/>
         
@@ -178,7 +203,6 @@ export default function App() {
         ))}
       </div>
 
-      {/* GRID BERITA */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-20">
         {loading ? (
           Array(6).fill(0).map((_, i) => <div key={i} className="h-72 bg-white/[0.02] border border-white/5 rounded-[32px] animate-pulse"></div>)
@@ -214,14 +238,9 @@ export default function App() {
         ))}
       </div>
 
-      {/* FOOTER */}
       <footer className="mt-20 border-t border-white/5 bg-white/[0.01] backdrop-blur-sm p-10 md:p-16">
         <div className="max-w-4xl mx-auto flex flex-col items-center text-center">
           <h2 className="text-xl md:text-2xl font-black tracking-tighter text-white mb-2">INDOSAWIT NEXUS</h2>
-          <p className="text-gray-400 text-xs leading-relaxed max-w-md mb-12 italic">
-            "Membangun ekosistem informasi cerdas berbasis AI untuk masa depan digital Indonesia."
-          </p>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full mb-12">
             <div className="flex flex-col items-center bg-white/[0.02] border border-white/5 p-6 rounded-3xl hover:border-blue-500/30 transition-colors">
               <img src="https://res.cloudinary.com/dwiozm4vz/image/upload/v1772959730/ootglrvfmykn6xsto7rq.png" alt="R_hmt" className="w-20 h-20 rounded-full border-2 border-blue-500/30 object-cover mb-4" />
@@ -238,7 +257,6 @@ export default function App() {
               </a>
             </div>
 
-            {/* 🔥 UPDATE PROFIL SANN404 🔥 */}
             <div className="flex flex-col items-center bg-white/[0.02] border border-white/5 p-6 rounded-3xl hover:border-[#b8cbb8]/30 transition-colors">
               <img src="https://e.top4top.io/p_3721610g20.jpg" alt="San" className="w-20 h-20 rounded-full border-2 border-[#b8cbb8]/30 object-cover mb-4" />
               <h3 className="text-lg font-black text-white">SANN404</h3>
@@ -252,12 +270,8 @@ export default function App() {
                 <WhatsAppIcon size={14} /> SANN404 FORUM | GROUP
               </a>
             </div>
-
           </div>
-
-          <div className="pt-8 border-t border-white/5 w-full flex justify-center opacity-40">
-            <p className="text-[10px] font-mono">© 2026 INDOSAWIT NEXUS COLLABORATION - ALL RIGHTS RESERVED</p>
-          </div>
+          <p className="text-[10px] font-mono opacity-40 uppercase">© 2026 INDOSAWIT NEXUS - ALL RIGHTS RESERVED</p>
         </div>
       </footer>
 
