@@ -91,7 +91,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
     }
   }, [messages, currentSessionId]);
 
-  // 🔥 THE "TRIO MACAN" LOGIC (UPDATED: SANEXUS SELALU JADI PENJAWAB UTAMA KECUALI DEEP)
+  // 🔥 TRIO MACAN LOGIC (FIXED)
   const performSearch = async (queryText, forceModel = null, skipUserMessage = false) => {
       if (!queryText.trim()) return;
 
@@ -105,34 +105,32 @@ export default function SanexusChat({ initialQuery, onClose }) {
       let targetModel = forceModel || (activeModel === 'auto' ? 'fast' : activeModel);
       let finalApiQuery = queryText;
 
-      // 🧠 PERPLEXITY HANYA SEBAGAI "PENERJEMAH" DI BALIK LAYAR JIKA BUKAN DEEP MODE
+      // PERPLEXITY HANYA SEBAGAI PENERJEMAH JIKA BUKAN DEEP
       if (targetModel !== 'deep' && messages.length > 0) {
-        // Jika pertanyaan terlalu pendek/ambigu, minta Perplexity buatin prompt utuhnya dulu
         if (queryText.split(" ").length < 6) {
            setLoadingText("Menganalisis niat pencarian Anda...");
-           const history = messages.slice(-2).map(m => `${m.role}: ${m.content}`).join(" | ");
+           const history = messages.slice(-2).map(m => m.content).join(" | ");
            const translatorPrompt = `Berikan SATU KALIMAT pertanyaan pencarian utuh berdasarkan riwayat ini. Riwayat: "${history}". Pertanyaan user: "${queryText}". Jangan jawab pertanyaannya, cukup berikan kalimat pencariannya saja.`;
            try {
               const res = await fetch(`/api/ngobrol?question=${encodeURIComponent(translatorPrompt)}`);
               const data = await res.json();
               if (data.answer && data.answer.length < 150) {
-                 finalApiQuery = data.answer.replace(/["']/g, ''); // Bersihkan hasil terjemahan
+                 finalApiQuery = data.answer.replace(/["']/g, ''); 
               }
            } catch(e) {
               console.log("Penerjemah gagal, lanjut dengan query asli");
            } 
         } else {
-           // Jika sudah panjang, langsung tempelin konteks aja
-           finalApiQuery = `Konteks obrolan sebelumnya: ${messages[messages.length-1].content.substring(0, 100)}. Pertanyaan saat ini: ${queryText}`;
+           const history = messages.slice(-2).map(m => m.content).join(" | ");
+           finalApiQuery = `Konteks obrolan: ${history}. Pertanyaan: ${queryText}`;
         }
       }
 
-      // 🚀 ENDPOINT LOGIC: SELALU PAKAI TURBOSEEK (/api) KECUALI USER KLIK 'DEEP'
+      // Endpoint: selalu pakai /api (Turboseek) agar dapet similar questions, kecuali user set 'deep'
       const endpoint = targetModel === 'deep' ? '/api/ngobrol' : '/api';
 
       try {
         setLoadingText("Sanexus sedang memvalidasi data...");
-        // Sanexus (Turboseek) mengeksekusi hasil terjemahan Perplexity
         const response = await fetch(`${endpoint}?question=${encodeURIComponent(finalApiQuery)}`);
         const data = await response.json();
         
@@ -158,6 +156,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
 
     if (pendingNews) {
       const customText = inputValue.trim();
+      
       const newMsg = {
           role: 'user',
           isNewsCard: true,
@@ -201,7 +200,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
         .s-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); background: #050705; z-index: 50; }
         .s-chat-area { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 220px; scroll-behavior: smooth; }
         
-        /* WELCOME SCREEN & WIDGET INFO MARKET */
         .s-welcome-container { margin-top: 20px; animation: smoothPop 0.5s ease-out forwards; }
         .s-welcome-title { font-family: 'Playfair Display', serif; font-size: 2.8rem; color: #b8cbb8; margin-bottom: 25px; line-height: 1.1; font-weight: 400; }
         .s-welcome-subtitle { font-family: 'Playfair Display', serif; color: #fff; font-weight: 700; }
@@ -217,18 +215,15 @@ export default function SanexusChat({ initialQuery, onClose }) {
         .s-big-card-title { font-size: 1.1rem; font-weight: 800; color: #fff; margin-bottom: 8px; }
         .s-big-card-desc { font-size: 0.75rem; color: #8e9b95; line-height: 1.4; }
 
-        /* BUBBLE CHAT */
         .s-bubble-user { background: #1e293b; border: 1px solid #334155; color: #f8fafc; text-align: left; margin-left: auto; max-width: 85%; border-radius: 20px 20px 0 20px; padding: 15px 20px; margin-bottom: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); word-wrap: break-word; font-weight: 500; }
         .s-bubble-ai { background: white; color: #1a201d; border-radius: 20px 20px 20px 0; max-width: 95%; padding: 22px; margin-bottom: 5px; line-height: 1.7; box-shadow: 0 10px 30px rgba(0,0,0,0.4); word-wrap: break-word; }
         .s-model-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; color: #a3b8a3; margin-bottom: 10px; display: block; opacity: 0.9; letter-spacing: 0.5px; }
         
-        /* SOURCE CARDS BANG SAN */
         .s-sources-grid { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; margin-bottom: 10px; }
         .s-source-card { background: #151a18; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 10px 15px; display: flex; align-items: center; gap: 12px; text-decoration: none; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .s-source-card:hover { background: #1a221f; border-color: #b8cbb8; transform: translateY(-2px); }
         .s-source-domain { font-size: 12px; font-weight: 600; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* SIMILAR QUESTIONS */
         .s-similar-box { margin-top: 15px; margin-bottom: 25px; padding-left: 5px; }
         .s-similar-title { font-size: 10px; color: #8e9b95; font-weight: 800; margin-bottom: 10px; text-transform: uppercase; display: flex; align-items: center; gap: 5px; }
         .s-similar-item { padding: 12px 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; font-size: 13px; color: #b8cbb8; margin-bottom: 8px; cursor: pointer; transition: 0.2s; font-weight: 600; }
@@ -237,21 +232,18 @@ export default function SanexusChat({ initialQuery, onClose }) {
         .s-action-icon { background: transparent; border: none; color: #8e9b95; cursor: pointer; opacity: 0.6; display: flex; align-items: center; transition: 0.2s; padding: 5px; }
         .s-action-icon:hover { opacity: 1; color: #b8cbb8; }
 
-        /* INPUT AREA */
         .s-input-container { position: absolute; bottom: 0; left: 0; width: 100%; padding: 0 20px 25px 20px; background: linear-gradient(0deg, #050705 85%, transparent); z-index: 100; }
         .s-search-bar { display: flex; align-items: center; background: #1a221f; border-radius: 50px; padding: 8px 8px 8px 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
         .s-search-bar input { flex: 1; background: transparent; border: none; color: white; outline: none; font-size: 0.95rem; }
         .s-submit-btn { width: 45px; height: 45px; border-radius: 50%; background: #b8cbb8; color: #000; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .s-submit-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-        /* MODEL SELECTOR */
         .s-model-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; position: relative; }
         .s-model-trigger { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #8e9b95; cursor: pointer; text-transform: uppercase; font-weight: 800; }
         .s-model-info-pop { position: absolute; bottom: 35px; left: 0; background: #1a221f; border: 1px solid #334155; padding: 15px; border-radius: 15px; width: 280px; z-index: 500; box-shadow: 0 10px 25px rgba(0,0,0,0.6); animation: smoothPop 0.2s ease-out; }
         .s-model-opt { font-size: 10px; color: #8e9b95; cursor: pointer; padding: 5px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); font-weight: 700; }
         .s-model-opt.active { background: #b8cbb8; color: #000; border-color: #b8cbb8; }
 
-        /* SIDEBAR & PROFILE */
         .s-sidebar { position: fixed; top: 0; left: -100%; width: 100%; height: 100%; z-index: 200; background: rgba(0,0,0,0.6); transition: 0.3s; }
         .s-sidebar.visible { left: 0; }
         .s-sidebar-content { width: 80%; max-width: 300px; height: 100%; background: #0a0d0c; padding: 25px 20px; display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.05); }
@@ -260,14 +252,12 @@ export default function SanexusChat({ initialQuery, onClose }) {
         .s-mini-profile-info h4 { font-size: 0.9rem; color: #fff; margin: 0; font-weight: 700; }
         .s-mini-profile-info p { font-size: 0.7rem; color: #8e9b95; margin: 0; }
 
-        /* FULL PROFILE OVERLAY */
         .s-full-profile-overlay { position: fixed; inset: 0; background: #050705; z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 60px 20px 40px 20px; text-align: center; overflow-y: auto; }
         .s-close-full-profile { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.1); border: none; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 310; cursor: pointer; }
         .s-collab-badge { background: linear-gradient(90deg, rgba(34,197,94,0.1) 0%, rgba(184,203,184,0.1) 100%); border: 1px solid rgba(184,203,184,0.3); padding: 8px 15px; border-radius: 20px; font-size: 0.75rem; color: #b8cbb8; margin-bottom: 30px; letter-spacing: 0.5px; font-weight: 700; }
 
         .s-toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: #a3b8a3; color: #050705; padding: 8px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; z-index: 1000; box-shadow: 0 4px 15px rgba(163,184,163,0.3); }
         
-        /* ORIGINAL ANIMATION IS BACK (Size normal) */
         .s-loader-pulse { width: 40px; height: 40px; background: #b8cbb8; border-radius: 50%; margin: 0 auto 10px; animation: s-pulse-ring 1.2s infinite; }
         @keyframes s-pulse-ring { 0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(184, 203, 184, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 15px rgba(184, 203, 184, 0); } 100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(184, 203, 184, 0); } }
         @keyframes smoothPop { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -281,7 +271,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
         <button className="s-btn" onClick={onClose} style={{background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer'}}><MaterialIcon name="close" /></button>
       </header>
 
-      {/* SIDEBAR & MINI PROFILE */}
       <aside className={`s-sidebar ${isSidebarOpen ? 'visible' : ''}`} onClick={() => setIsSidebarOpen(false)}>
         <div className="s-sidebar-content" onClick={e => e.stopPropagation()}>
            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
@@ -311,7 +300,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
         </div>
       </aside>
 
-      {/* FULL PROFILE OVERLAY */}
       {showFullProfile && (
         <div className="s-full-profile-overlay">
           <button className="s-close-full-profile" onClick={() => setShowFullProfile(false)}>
@@ -338,7 +326,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
       )}
 
       <main className="s-chat-area">
-        {/* WELCOME SCREEN & WIDGET INFO MARKET */}
         {messages.length === 0 && !isLoading && (
           <div className="s-welcome-container">
             <h2 className="s-welcome-title">Welcome Sir, <br/><span className="s-welcome-subtitle">User</span></h2>
@@ -354,8 +341,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
                 <h3 className="s-big-card-title">Business</h3>
                 <p className="s-big-card-desc">Analyze market trends and business strategies.</p>
               </div>
-              
-              {/* 🔥 UPDATE: WIDGET INFO MARKET TANPA SAWIT 🔥 */}
               <div className="s-big-card" onClick={() => performSearch("Update IHSG, emas, dan crypto hari ini")}>
                 <TrendingUp size={26} className="s-big-card-icon" />
                 <h3 className="s-big-card-title">Info Market</h3>
@@ -365,7 +350,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
           </div>
         )}
 
-        {/* BUBBLE CHAT */}
         {messages.map((msg, i) => {
           const nextAiMsg = messages[i + 1]?.role === 'ai' ? messages[i + 1].content : null;
 
@@ -374,7 +358,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
             {msg.role === 'user' ? (
               <div style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginBottom: '25px'}}>
                 <div className="s-bubble-user">
-                  {/* BUBBLE KARTU BERITA ANTI DOUBLE-TEXT */}
                   {msg.isNewsCard && (
                     <div style={{background: 'rgba(0,0,0,0.4)', padding: '10px', borderRadius: '12px', marginBottom: msg.content ? '10px' : '0'}}>
                       <img src={msg.newsData.image} alt="news" style={{width: '100%', height: '120px', objectFit: 'cover', borderRadius: '8px', marginBottom: '8px'}} />
@@ -384,7 +367,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
                   {msg.content && <span>{msg.content}</span>}
                 </div>
                 <div style={{display: 'flex', gap: '15px', marginRight: '5px', marginTop: '5px'}}>
-                   <button className="s-action-icon" onClick={() => handleEdit(msg.content)} title="Edit"><Edit innovation="true" size={16}/></button>
+                   <button className="s-action-icon" onClick={() => handleEdit(msg.content)} title="Edit"><Edit2 size={16}/></button>
                    <button className="s-action-icon" onClick={() => handleCopy(msg.content)} title="Salin"><Copy size={16}/></button>
                    <button className="s-action-icon" onClick={() => handleShare(msg.content, nextAiMsg)} title="Bagikan"><Share2 size={16}/></button>
                 </div>
@@ -400,7 +383,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
                    <button className="s-action-icon" onClick={() => performSearch(messages[i-1]?.content)} title="Regenerate"><RefreshCw size={16}/></button>
                 </div>
 
-                {/* THE RETURN OF SOURCE CARDS */}
                 {msg.sources?.length > 0 && (
                   <div className="s-sources-grid">
                     <div style={{display: 'flex', alignItems: 'center', gap: '6px', color: '#8e9b95', fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '2px', marginLeft: '5px'}}>
@@ -418,7 +400,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
                   </div>
                 )}
 
-                {/* THE RETURN OF SIMILAR QUESTIONS (SELALU MUNCUL KECUALI DI DEEP MODE) */}
                 {msg.similar?.length > 0 && (
                   <div className="s-similar-box">
                     <div className="s-similar-title"><MessageCircle size={14}/> Pertanyaan Terkait</div>
@@ -437,7 +418,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
           </div>
         )})}
 
-        {/* ANIMASI LOADING (ORIGINAL) */}
         {isLoading && (
           <div style={{textAlign: 'center', padding: '30px 0', opacity: 0.9}}>
             <div className="s-loader-pulse"></div>
@@ -461,7 +441,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
           </div>
         )}
 
-        {/* LACI MODEL & INFO TOOLTIP */}
         <div className="s-model-bar">
           <div className="s-model-trigger" onClick={() => setIsModelSelectorOpen(!isModelSelectorOpen)}>
             {isModelSelectorOpen ? <ChevronDown size={14}/> : <ChevronUp size={14}/>}
