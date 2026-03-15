@@ -30,7 +30,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
   const [sessions, setSessions] = useState([]);
   const [currentSessionId, setCurrentSessionId] = useState(Date.now().toString());
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [showFullProfile, setShowFullProfile] = useState(false); // STATE PROFIL
+  const [showFullProfile, setShowFullProfile] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
   
   const [activeModel, setActiveModel] = useState('auto');
@@ -42,7 +42,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [messages, isLoading, loadingText]);
 
-  // ANIMASI LOADING TETAP ORIGINAL SANEXUS DENGAN TEKS DINAMIS
   useEffect(() => {
     let timer;
     if (isLoading) {
@@ -92,7 +91,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
     }
   }, [messages, currentSessionId]);
 
-  // 🔥 THE "TRIO MACAN" LOGIC (AGENTIC INTERPRETER)
+  // 🔥 THE "TRIO MACAN" LOGIC (UPDATED: SANEXUS SELALU JADI PENJAWAB UTAMA KECUALI DEEP)
   const performSearch = async (queryText, forceModel = null, skipUserMessage = false) => {
       if (!queryText.trim()) return;
 
@@ -104,34 +103,37 @@ export default function SanexusChat({ initialQuery, onClose }) {
       setIsSidebarOpen(false);
 
       let targetModel = forceModel || (activeModel === 'auto' ? 'fast' : activeModel);
-      let apiQuery = queryText;
+      let finalApiQuery = queryText;
 
-      // ANALOGI ORANG KE-3 (Perplexity Penerjemah)
-      if (activeModel === 'auto' && messages.length > 0) {
-        const history = messages.slice(-2).map(m => m.content).join(" | ");
-        
-        // Cek kalau pertanyaannya cuma pendek/menggantung
+      // 🧠 PERPLEXITY HANYA SEBAGAI "PENERJEMAH" DI BALIK LAYAR JIKA BUKAN DEEP MODE
+      if (targetModel !== 'deep' && messages.length > 0) {
+        // Jika pertanyaan terlalu pendek/ambigu, minta Perplexity buatin prompt utuhnya dulu
         if (queryText.split(" ").length < 6) {
-           setLoadingText("Meminta penerjemah menganalisis niat Anda...");
-           const translatorPrompt = `Berikan SATU KALIMAT pertanyaan pencarian utuh berdasarkan riwayat ini. Riwayat: "${history}". Pertanyaan user: "${queryText}". Jangan jawab pertanyaannya, berikan kalimat pencariannya saja.`;
+           setLoadingText("Menganalisis niat pencarian Anda...");
+           const history = messages.slice(-2).map(m => `${m.role}: ${m.content}`).join(" | ");
+           const translatorPrompt = `Berikan SATU KALIMAT pertanyaan pencarian utuh berdasarkan riwayat ini. Riwayat: "${history}". Pertanyaan user: "${queryText}". Jangan jawab pertanyaannya, cukup berikan kalimat pencariannya saja.`;
            try {
               const res = await fetch(`/api/ngobrol?question=${encodeURIComponent(translatorPrompt)}`);
               const data = await res.json();
               if (data.answer && data.answer.length < 150) {
-                 apiQuery = data.answer; 
+                 finalApiQuery = data.answer.replace(/["']/g, ''); // Bersihkan hasil terjemahan
               }
-           } catch(e) {} 
+           } catch(e) {
+              console.log("Penerjemah gagal, lanjut dengan query asli");
+           } 
+        } else {
+           // Jika sudah panjang, langsung tempelin konteks aja
+           finalApiQuery = `Konteks obrolan sebelumnya: ${messages[messages.length-1].content.substring(0, 100)}. Pertanyaan saat ini: ${queryText}`;
         }
-        apiQuery = `Konteks Obrolan: ${history}. Pertanyaan: ${apiQuery}`;
       }
 
-      if (activeModel === 'deep') targetModel = 'deep';
-      
+      // 🚀 ENDPOINT LOGIC: SELALU PAKAI TURBOSEEK (/api) KECUALI USER KLIK 'DEEP'
       const endpoint = targetModel === 'deep' ? '/api/ngobrol' : '/api';
 
       try {
         setLoadingText("Sanexus sedang memvalidasi data...");
-        const response = await fetch(`${endpoint}?question=${encodeURIComponent(apiQuery)}`);
+        // Sanexus (Turboseek) mengeksekusi hasil terjemahan Perplexity
+        const response = await fetch(`${endpoint}?question=${encodeURIComponent(finalApiQuery)}`);
         const data = await response.json();
         
         if (response.ok && !data.error) {
@@ -156,8 +158,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
 
     if (pendingNews) {
       const customText = inputValue.trim();
-      
-      // BUBBLE TUNGGAL EKSKLUSIF
       const newMsg = {
           role: 'user',
           isNewsCard: true,
@@ -299,10 +299,8 @@ export default function SanexusChat({ initialQuery, onClose }) {
              ))}
            </div>
            
-           {/* UPDATE: Tombol hapus dikecilin padding-nya (8px) dan dikasih margin bawah 25px biar nggak dempet profil */}
            {sessions.length > 0 && <button onClick={clearAllHistory} style={{padding: '8px', background: 'rgba(255,0,0,0.1)', border: '1px solid rgba(255,0,0,0.2)', borderRadius: '12px', color: '#ff6b6b', fontWeight: 'bold', marginTop: '10px', marginBottom: '25px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer'}}><Trash2 size={16}/> Bersihkan Semua</button>}
            
-           {/* UPDATE: Jabatan diganti jadi Master Coder */}
            <div className="s-mini-profile" onClick={() => { setIsSidebarOpen(false); setShowFullProfile(true); }}>
              <img src="https://e.top4top.io/p_3721610g20.jpg" alt="SANN404" />
              <div className="s-mini-profile-info">
@@ -326,10 +324,8 @@ export default function SanexusChat({ initialQuery, onClose }) {
           <h1 style={{fontFamily: "'Playfair Display', serif", fontSize: '2.5rem', color: '#b8cbb8', marginBottom: '5px'}}>SANEXUSAI</h1>
           <h3 style={{fontSize: '1.5rem', color: '#ffffff', marginBottom: '20px', letterSpacing: '2px'}}>SANN404</h3>
           
-          {/* UPDATE: Jabatan diganti jadi Node.js Expert & Master Coder */}
           <p style={{fontSize: '0.9rem', color: '#8e9b95', marginBottom: '30px', maxWidth: '300px', lineHeight: '1.6'}}>Node.js Expert & Master Coder</p>
           
-          {/* UPDATE: Semua ikon diganti jadi WhatsApp */}
           <div style={{display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '30px'}}>
             <a href="#" style={{background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '15px', color: '#fff'}}><WhatsAppIcon size={20}/></a>
             <a href="#" style={{background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '15px', color: '#fff'}}><WhatsAppIcon size={20}/></a>
@@ -358,10 +354,12 @@ export default function SanexusChat({ initialQuery, onClose }) {
                 <h3 className="s-big-card-title">Business</h3>
                 <p className="s-big-card-desc">Analyze market trends and business strategies.</p>
               </div>
-              <div className="s-big-card" onClick={() => performSearch("Update harga sawit, IHSG, dan crypto hari ini")}>
+              
+              {/* 🔥 UPDATE: WIDGET INFO MARKET TANPA SAWIT 🔥 */}
+              <div className="s-big-card" onClick={() => performSearch("Update IHSG, emas, dan crypto hari ini")}>
                 <TrendingUp size={26} className="s-big-card-icon" />
                 <h3 className="s-big-card-title">Info Market</h3>
-                <p className="s-big-card-desc">Pantau harga sawit, IHSG, emas, dan crypto.</p>
+                <p className="s-big-card-desc">Pantau pergerakan IHSG, harga emas, dan crypto.</p>
               </div>
             </div>
           </div>
@@ -385,9 +383,8 @@ export default function SanexusChat({ initialQuery, onClose }) {
                   )}
                   {msg.content && <span>{msg.content}</span>}
                 </div>
-                {/* IKON SUDAH PROPORSIONAL SIZE 16 */}
                 <div style={{display: 'flex', gap: '15px', marginRight: '5px', marginTop: '5px'}}>
-                   <button className="s-action-icon" onClick={() => handleEdit(msg.content)} title="Edit"><Edit2 size={16}/></button>
+                   <button className="s-action-icon" onClick={() => handleEdit(msg.content)} title="Edit"><Edit innovation="true" size={16}/></button>
                    <button className="s-action-icon" onClick={() => handleCopy(msg.content)} title="Salin"><Copy size={16}/></button>
                    <button className="s-action-icon" onClick={() => handleShare(msg.content, nextAiMsg)} title="Bagikan"><Share2 size={16}/></button>
                 </div>
@@ -398,7 +395,6 @@ export default function SanexusChat({ initialQuery, onClose }) {
                   <span className="s-model-tag">⚡ {msg.model === 'deep' ? 'Deep Search' : 'Fast Chat'}</span>
                   <div dangerouslySetInnerHTML={formatMarkdown(msg.content)} />
                 </div>
-                {/* IKON SUDAH PROPORSIONAL SIZE 16 */}
                 <div style={{display: 'flex', gap: '15px', marginLeft: '5px', marginTop: '5px'}}>
                    <button className="s-action-icon" onClick={() => handleCopy(msg.content)} title="Salin"><Copy size={16}/></button>
                    <button className="s-action-icon" onClick={() => performSearch(messages[i-1]?.content)} title="Regenerate"><RefreshCw size={16}/></button>
@@ -422,7 +418,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
                   </div>
                 )}
 
-                {/* THE RETURN OF SIMILAR QUESTIONS */}
+                {/* THE RETURN OF SIMILAR QUESTIONS (SELALU MUNCUL KECUALI DI DEEP MODE) */}
                 {msg.similar?.length > 0 && (
                   <div className="s-similar-box">
                     <div className="s-similar-title"><MessageCircle size={14}/> Pertanyaan Terkait</div>
@@ -441,7 +437,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
           </div>
         )})}
 
-        {/* ANIMASI LOADING (ORIGINAL) DENGAN TEKS DINAMIS */}
+        {/* ANIMASI LOADING (ORIGINAL) */}
         {isLoading && (
           <div style={{textAlign: 'center', padding: '30px 0', opacity: 0.9}}>
             <div className="s-loader-pulse"></div>
