@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Menu, X, Filter, ExternalLink, Github, Send, Instagram, CheckCircle2, ChevronUp, MessageCircle, Sparkles, Megaphone, TrendingUp, Scale, ShieldAlert, HeartPulse, Cpu, Globe, Palette, GraduationCap, Smartphone, Share, MoreVertical } from "lucide-react";
+import { Menu, X, Filter, ExternalLink, Github, Send, Instagram, CheckCircle2, ChevronUp, MessageCircle, Sparkles, Megaphone, TrendingUp, Scale, ShieldAlert, HeartPulse, Cpu, Globe, Palette, GraduationCap, Share2 } from "lucide-react";
 import SanexusChat from "./components/SanexusChat";
 
 const TikTokIcon = ({ size = 20, className = "" }) => (
@@ -33,7 +33,7 @@ export default function App() {
   const sources = ["Semua", "CNBC", "CNN", "Kompas", "Sindo", "Suara"];
 
   useEffect(() => {
-    // 🔥 POPUP BERANDA LOGIC (Cuma di HP) 🔥
+    // 🔥 POPUP BERANDA LOGIC 🔥
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const hasSeenPopup = localStorage.getItem("hasSeenInstallPopup");
     
@@ -111,7 +111,7 @@ export default function App() {
   return (
     <div className="min-h-screen font-sans text-white bg-[#050705]">
       
-      {/* MODAL POPUP TAMBAH KE BERANDA - TANPA ICON DI DALAMNYA */}
+      {/* MODAL POPUP TAMBAH KE BERANDA - ANTI CRASH */}
       {showInstallPopup && (
         <div className="fixed bottom-6 left-4 right-4 z-[9999] animate-in fade-in slide-in-from-bottom-10">
           <div className="bg-[#1a201d] border border-[#b8cbb8]/30 rounded-3xl p-6 shadow-2xl backdrop-blur-xl relative">
@@ -123,12 +123,12 @@ export default function App() {
             </div>
 
             <div className="bg-white/5 rounded-2xl p-4 text-[11px] text-gray-300 space-y-3 leading-relaxed border border-white/5">
-              <p className="flex items-center gap-2 italic"><Smartphone size={14} className="text-blue-400"/> Gunakan browser HP untuk hasil terbaik.</p>
+              <p className="flex items-center gap-2 italic"><Globe size={14} className="text-blue-400"/> Gunakan browser HP untuk hasil terbaik.</p>
               <p className="flex items-center gap-2 underline underline-offset-4 decoration-blue-500/50">
-                <MoreVertical size={14} className="text-blue-400"/> Android: Klik titik tiga (⋮) & pilih 'Tambah ke layar utama'.
+                <Menu size={14} className="text-blue-400"/> Android: Klik titik tiga (⋮) dan pilih Tambah ke layar utama.
               </p>
               <p className="flex items-center gap-2 underline underline-offset-4 decoration-pink-500/50">
-                <Share size={14} className="text-pink-400"/> iOS: Klik ikon Share & pilih 'Add to Home Screen'.
+                <Share2 size={14} className="text-pink-400"/> iOS: Klik ikon Share dan pilih Add to Home Screen.
               </p>
             </div>
             <button onClick={closeInstallPopup} className="w-full mt-4 py-3 bg-[#b8cbb8] text-[#050705] rounded-xl text-[11px] font-black uppercase tracking-widest">Siap, Mengerti Sir!</button>
