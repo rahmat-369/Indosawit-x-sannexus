@@ -91,7 +91,7 @@ export default function SanexusChat({ initialQuery, onClose }) {
     }
   }, [messages, currentSessionId]);
 
-  // 🔥 TRIO MACAN LOGIC (FIXED)
+  // 🔥 TRIO MACAN LOGIC (FIXED: 4 PERTANYAAN PASTI MUNCUL)
   const performSearch = async (queryText, forceModel = null, skipUserMessage = false) => {
       if (!queryText.trim()) return;
 
@@ -105,25 +105,22 @@ export default function SanexusChat({ initialQuery, onClose }) {
       let targetModel = forceModel || (activeModel === 'auto' ? 'fast' : activeModel);
       let finalApiQuery = queryText;
 
-      // PERPLEXITY HANYA SEBAGAI PENERJEMAH JIKA BUKAN DEEP
+      // 🧠 PERPLEXITY HANYA SEBAGAI PENERJEMAH (CLEAN QUERY)
       if (targetModel !== 'deep' && messages.length > 0) {
         if (queryText.split(" ").length < 6) {
-           setLoadingText("Menganalisis niat pencarian Anda...");
+           setLoadingText("Menganalisis konteks obrolan...");
            const history = messages.slice(-2).map(m => m.content).join(" | ");
-           const translatorPrompt = `Berikan SATU KALIMAT pertanyaan pencarian utuh berdasarkan riwayat ini. Riwayat: "${history}". Pertanyaan user: "${queryText}". Jangan jawab pertanyaannya, cukup berikan kalimat pencariannya saja.`;
+           const translatorPrompt = `Berdasarkan riwayat: "${history}". Ubah pertanyaan "${queryText}" menjadi satu kalimat pencarian mandiri yang utuh. Jawab HANYA dengan kalimat pencariannya saja, tanpa tanda kutip.`;
            try {
               const res = await fetch(`/api/ngobrol?question=${encodeURIComponent(translatorPrompt)}`);
               const data = await res.json();
               if (data.answer && data.answer.length < 150) {
-                 finalApiQuery = data.answer.replace(/["']/g, ''); 
+                 finalApiQuery = data.answer.replace(/["']/g, '').trim(); 
               }
            } catch(e) {
               console.log("Penerjemah gagal, lanjut dengan query asli");
            } 
-        } else {
-           const history = messages.slice(-2).map(m => m.content).join(" | ");
-           finalApiQuery = `Konteks obrolan: ${history}. Pertanyaan: ${queryText}`;
-        }
+        } 
       }
 
       // Endpoint: selalu pakai /api (Turboseek) agar dapet similar questions, kecuali user set 'deep'
