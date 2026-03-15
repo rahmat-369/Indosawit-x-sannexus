@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Menu, X, Filter, ExternalLink, Github, Send, Instagram, CheckCircle2, ChevronUp, Sparkles, Megaphone, TrendingUp, Scale, ShieldAlert, HeartPulse, Cpu } from "lucide-react";
+import { Menu, X, Filter, ExternalLink, Github, Send, Instagram, CircleCheck, ChevronUp, Sparkles, Megaphone, TrendingUp, Scale, ShieldAlert, HeartPulse, Cpu } from "lucide-react";
 import SanexusChat from "./components/SanexusChat";
 
 const TikTokIcon = ({ size = 20, className = "" }) => (
@@ -111,27 +111,27 @@ export default function App() {
   return (
     <div className="min-h-screen font-sans text-white bg-[#050705]">
       
-      {/* 🔥 MODAL POPUP SUPER LITE (ANTI CRASH) 🔥 */}
+      {/* 🔥 MODAL POPUP MURNI EMOJI ANTI CRASH 🔥 */}
       {showInstallPopup && (
-        <div className="fixed bottom-4 left-4 right-4 z-[9999]">
-          <div className="bg-[#1a201d] border border-[#b8cbb8]/30 rounded-2xl p-5 shadow-2xl">
-            <div className="flex justify-between items-start mb-3">
-              <div>
-                <h4 className="font-bold text-sm text-[#b8cbb8]">Jadikan Aplikasi</h4>
-                <p className="text-[10px] text-gray-400">Akses lebih cepat dari layar utama.</p>
-              </div>
-              <button onClick={closeInstallPopup} className="text-gray-500 font-bold p-1 hover:text-white">X</button>
-            </div>
+        <div className="fixed bottom-6 left-4 right-4 z-[9999] animate-in fade-in slide-in-from-bottom-10">
+          <div className="bg-[#1a201d] border border-[#b8cbb8]/30 rounded-3xl p-6 shadow-2xl backdrop-blur-xl relative">
+            <button onClick={closeInstallPopup} className="absolute top-4 right-4 text-gray-500 hover:text-white"><X size={20}/></button>
             
-            <div className="bg-black/50 rounded-xl p-3 text-[11px] text-gray-300 space-y-2">
-              <p>1. Buka di browser HP</p>
-              <p>2. Android: Klik titik tiga, pilih Tambah ke layar utama</p>
-              <p>3. iOS: Klik tombol Share, pilih Add to Home Screen</p>
+            <div className="mb-4">
+              <h4 className="font-black text-sm text-[#b8cbb8]">Jadikan Web App</h4>
+              <p className="text-[10px] text-gray-400">Akses IndoSawit lebih cepat dari layar utama.</p>
             </div>
-            
-            <button onClick={closeInstallPopup} className="w-full mt-3 py-2 bg-[#b8cbb8] text-black rounded-lg text-xs font-bold uppercase tracking-widest">
-              Mengerti
-            </button>
+
+            <div className="bg-white/5 rounded-2xl p-4 text-[11px] text-gray-300 space-y-3 leading-relaxed border border-white/5">
+              <p className="flex items-center gap-2 italic"><span>🌐</span> Gunakan browser HP untuk hasil terbaik.</p>
+              <p className="flex items-center gap-2 underline underline-offset-4 decoration-blue-500/50">
+                <span>📱</span> Android: Klik titik tiga (⋮) lalu pilih Tambah ke layar utama.
+              </p>
+              <p className="flex items-center gap-2 underline underline-offset-4 decoration-pink-500/50">
+                <span>🍎</span> iOS: Klik ikon Share lalu pilih Add to Home Screen.
+              </p>
+            </div>
+            <button onClick={closeInstallPopup} className="w-full mt-4 py-3 bg-[#b8cbb8] text-[#050705] rounded-xl text-[11px] font-black uppercase tracking-widest">Siap, Mengerti Sir!</button>
           </div>
         </div>
       )}
@@ -156,7 +156,7 @@ export default function App() {
           </div>
           <div className="flex items-center gap-3">
             <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-full text-[10px] font-bold text-green-400 uppercase tracking-widest">
-               <CheckCircle2 size={14}/> Server Optimal
+               <CircleCheck size={14}/> Server Optimal
             </div>
             <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 bg-white/5 rounded-xl border border-white/10 text-blue-400 hover:bg-white/10 transition-colors">
               {isMenuOpen ? <X size={24}/> : <Menu size={24}/>}
@@ -165,10 +165,10 @@ export default function App() {
         </nav>
 
         {isMenuOpen && (
-          <div className="absolute top-[110%] left-0 w-full glass-card rounded-3xl p-6 bg-white/[0.02] backdrop-blur-xl shadow-2xl border border-white/5">
+          <div className="absolute top-[110%] left-0 w-full glass-card rounded-3xl p-6 animate-in slide-in-from-top duration-300 border border-white/5 bg-white/[0.02] backdrop-blur-xl shadow-2xl">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-[10px] text-blue-400 font-bold uppercase tracking-widest">Status Sistem</h3>
-              <span className="flex items-center gap-1 text-[9px] font-bold text-green-400 bg-green-400/10 px-2 py-1 rounded-full"><CheckCircle2 size={10}/> Link Aktif</span>
+              <span className="flex items-center gap-1 text-[9px] font-bold text-green-400 bg-green-400/10 px-2 py-1 rounded-full"><CircleCheck size={10}/> Link Aktif</span>
             </div>
             <div className="grid grid-cols-2 gap-3 mb-3">
               <button onClick={() => { setIsMenuOpen(false); setViewMode('ai'); window.history.pushState({}, '', '?page=ai'); }} className="col-span-2 p-4 bg-gradient-to-r from-[#0d1110] to-[#1a201d] border border-[#b8cbb8]/30 rounded-2xl text-xs font-bold text-[#b8cbb8] flex items-center justify-center gap-2 shadow-[0_4px_15px_rgba(184,203,184,0.1)] hover:border-[#b8cbb8] transition-all">
@@ -276,7 +276,7 @@ export default function App() {
       </footer>
 
       {showTopBtn && (
-        <button onClick={scrollToTop} className="fixed bottom-8 right-6 z-30 p-3 bg-blue-600/20 backdrop-blur-xl border border-blue-500/50 rounded-full text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)] transition-all">
+        <button onClick={scrollToTop} className="fixed bottom-8 right-6 z-30 p-3 bg-blue-600/20 backdrop-blur-xl border border-blue-500/50 rounded-full text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)] animate-in fade-in zoom-in">
           <ChevronUp size={24} />
         </button>
       )}
